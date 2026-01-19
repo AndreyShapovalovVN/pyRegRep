@@ -67,7 +67,7 @@ class Parsing:
             elif slot.tag == self.__tname("query", "Query"):
                 for query in list(slot):
                     name = query.get("name")
-                    edm["query"].append({"query": {name: (self.__value(query))}})
+                    edm["query"].append({name: (self.__value(query))})
                 continue
             elif slot.tag == self.__tname("rs", "Exception"):
                 for exception in list(slot):
@@ -99,3 +99,36 @@ class Parsing:
                 continue
 
         return edm
+
+    def serialize(self):
+        def transform_data(data):
+            if isinstance(data, list):
+                return [transform_data(item) for item in data]
+
+            elif isinstance(data, dict):
+                return {k: transform_data(v) for k, v in data.items()}
+
+            elif isinstance(data, tuple) and len(data) == 2:
+                data_type, value = data
+
+                if data_type == 'BooleanValueType':
+                    return value.lower() == 'true'
+
+                elif data_type == 'StringValueType':
+                    return value.strip()
+
+                elif data_type == 'CollectionValueType':
+                    return transform_data(value)
+
+                elif data_type == 'AnyValueType':
+                    return value
+
+                elif data_type == 'InternationalStringValueType':
+                    return transform_data(value)
+
+                # Якщо тип не підпав під умови, повертаємо значення як є
+                return transform_data(value) if isinstance(value, (list, dict)) else value
+
+            return data
+
+        return transform_data(self.slots)

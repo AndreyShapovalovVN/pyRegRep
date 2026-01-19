@@ -26,5 +26,7 @@ for xml in xmls:
         print(key)
         print("-" * 100)
         edm = Parsing(value)
-        for k, v in edm.slots.items():
+        print(edm.slots)
+        print(edm.serealize())
+        for k, v in edm.serealize().items():
             print(k, v)
