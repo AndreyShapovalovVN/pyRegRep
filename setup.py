@@ -1,12 +1,12 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name="pyRegRep",
     version="1",
-    packages=["lxml"],
-    url="",
+    packages=find_packages(),
     license="MIT",
     author="Andrii Shapovalov",
     author_email="mt.andrey@gmail.com",
-    description="",
+    include_package_data=True,
+    install_requires=[],
 )
