@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="pyRegRep",
-    version="3",
+    version="4",
     packages=find_packages(),
     license="MIT",
     author="Andrii Shapovalov",

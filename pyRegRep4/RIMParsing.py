@@ -58,21 +58,21 @@ class Parsing:
             return type_, slot[0].text
 
     def __list_slots(self) -> dict[str, tuple[str, str]]:
-        edm: dict = {"doc": [], "query": [], "exception": [], "object": []}
+        edm: dict = {"doc": {}, "query": {}, "exception": {}, "object": {}}
         for slot in list(self.doc):
             if slot.tag == self.__tname("rim", "Slot"):
                 name = slot.get("name")
-                edm["doc"].append({name: (self.__value(slot))})
+                edm["doc"].update({name: (self.__value(slot))})
                 continue
             elif slot.tag == self.__tname("query", "Query"):
                 for query in list(slot):
                     name = query.get("name")
-                    edm["query"].append({name: (self.__value(query))})
+                    edm["query"].update({name: (self.__value(query))})
                 continue
             elif slot.tag == self.__tname("rs", "Exception"):
                 for exception in list(slot):
                     name = exception.get("name")
-                    edm["exception"].append({name: (self.__value(exception))})
+                    edm["exception"].update({name: (self.__value(exception))})
                 continue
             elif slot.tag == self.__tname("rim", "RegistryObjectList"):
                 for registryObject in list(slot):
@@ -93,7 +93,7 @@ class Parsing:
                                     }
                                 }
                             )
-                    edm["object"].append(ev)
+                    edm["object"].update(ev)
                 continue
             else:
                 continue

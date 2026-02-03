@@ -2,7 +2,6 @@ from lxml import etree
 
 
 class NS:
-    _xml: etree._Element | None = None
     _ns = {
         "xsi": "http://www.w3.org/2001/XMLSchema-instance",
         "rs": "urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0",
