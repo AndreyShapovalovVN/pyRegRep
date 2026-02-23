@@ -7,6 +7,7 @@ _logger = logging.getLogger(__name__)
 
 class Parsing:
     def __init__(self, doc: bytes):
+        self.xml = doc.decode("utf-8")
         parser = etree.XMLParser(remove_comments=True)
         self.doc = etree.fromstring(doc, parser)
         self._ns = {}
