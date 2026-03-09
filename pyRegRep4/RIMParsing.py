@@ -183,7 +183,7 @@ class Parsing:
                 for item in slot_value:
                     wrapper = etree.Element("wrapper")
                     wrapper.append(item)
-                    values.append(self.__value(wrapper))
+                    values.append(self.__value(wrapper))  # type: ignore
                 return type_, values
 
             else:

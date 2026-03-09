@@ -58,7 +58,7 @@ def example_serialized_mode():
 
     if evidence_provider is not None:
         print(f"\nКлючі: {list(evidence_provider.keys())}")
-        print(f"\nПримерна структура:")
+        print("\nПримерна структура:")
         print(json.dumps(evidence_provider, indent=2, ensure_ascii=False)[:500] + "...")
 
 
@@ -116,7 +116,7 @@ def example_object_slots():
     for slot_name, slot_value in object_slots.items():
         if isinstance(slot_value, dict):
             print(f"\n{slot_name}:")
-            print(f"  Тип: dict")
+            print("  Тип: dict")
             print(f"  Ключі: {list(slot_value.keys())[:3]}...")
 
 
@@ -141,7 +141,6 @@ def example_consistency():
     print(f"Результати - один об'єкт?: {result1 is result2}")
 
     # Переключення між режимами не впливає на консистентність
-    result_default = doc.serialize(any_type=False)
     result3 = doc.serialize(any_type=True)
 
     print(f"Після переключення режимів результати ще ідентичні?: {result2 == result3}")
