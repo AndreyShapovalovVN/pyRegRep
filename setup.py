@@ -2,7 +2,8 @@ from setuptools import setup, find_packages
 
 setup(
     name="pyRegRep",
-    version="5.0.1",
+    version="6.0.0",
+    description="Бібліотека для роботи з реєстрами та репозитаріями в Україні",
     packages=find_packages(),
     license="MIT",
     author="Andrii Shapovalov",

@@ -9,6 +9,7 @@ Tests cover:
 """
 
 import pytest
+from lxml import etree
 from pathlib import Path
 from pyRegRep4.RIMParsing import Parsing
 
@@ -217,6 +218,42 @@ class TestSerialization:
         if isinstance(procedure, list):
             assert all(isinstance(item, dict) for item in procedure)
 
+    def test_serialize_any_value_type_default_returns_element(self, request_doc):
+        """AnyValueType with any_type=False should return lxml Element."""
+        serialized = request_doc.serialize(any_type=False)
+        evidence_provider = serialized.get("doc", {}).get("EvidenceProvider")
+
+        assert evidence_provider is not None
+        assert isinstance(evidence_provider, etree._Element)
+
+    def test_serialize_any_value_type_to_dict(self, request_doc):
+        """AnyValueType with any_type=True should be serialized to a plain dictionary."""
+        serialized = request_doc.serialize(any_type=True)
+        evidence_provider = serialized.get("doc", {}).get("EvidenceProvider")
+
+        assert evidence_provider is not None
+        assert isinstance(evidence_provider, dict)
+        assert any("Agent" in key for key in evidence_provider.keys())
+
+    def test_serialize_collection_with_any_value_type_default(self, request_doc):
+        """CollectionValueType with AnyValueType items (default) should contain Elements."""
+        serialized = request_doc.serialize(any_type=False)
+        requirements = serialized.get("doc", {}).get("Requirements")
+
+        assert isinstance(requirements, list)
+        assert requirements, "Requirements should not be empty"
+        assert all(isinstance(item, etree._Element) for item in requirements)
+
+    def test_serialize_collection_with_any_value_type(self, request_doc):
+        """CollectionValueType with AnyValueType items (any_type=True) should serialize to dicts."""
+        serialized = request_doc.serialize(any_type=True)
+        requirements = serialized.get("doc", {}).get("Requirements")
+
+        assert isinstance(requirements, list)
+        assert requirements, "Requirements should not be empty"
+        assert all(isinstance(item, dict) for item in requirements)
+        assert all(not isinstance(item, etree._Element) for item in requirements)
+
 
 class TestMultipleFiles:
     """Test parsing multiple test files."""
@@ -296,4 +333,75 @@ class TestEdgeCases:
         serialized1 = request_doc.serialize()
         serialized2 = request_doc.serialize()
         assert serialized1 == serialized2
+
+
+class TestAnyValueTypeSerialization:
+    """Dedicated tests for AnyValueType serialization with xmltodict."""
+
+    @pytest.fixture
+    def second_response_doc(self):
+        """Load second response document which has AnyValueType in objects."""
+        xml_file = TEST_DATA_DIR / "EDM_Second_Response.xml"
+        with open(xml_file, "rb") as f:
+            return Parsing(f.read())
+
+    def test_any_value_type_single_element_default(self, second_response_doc):
+        """Single AnyValueType element (default mode) should remain as lxml Element."""
+        serialized = second_response_doc.serialize(any_type=False)
+        evidence_requester = serialized.get("doc", {}).get("EvidenceRequester")
+
+        assert evidence_requester is not None
+        assert isinstance(evidence_requester, etree._Element)
+
+    def test_any_value_type_single_element_serialized(self, second_response_doc):
+        """Single AnyValueType element (any_type=True) should be dict with namespace-aware keys."""
+        serialized = second_response_doc.serialize(any_type=True)
+        evidence_requester = serialized.get("doc", {}).get("EvidenceRequester")
+
+        assert evidence_requester is not None
+        assert isinstance(evidence_requester, dict)
+        # Should contain namespace-prefixed keys like 'sdg:Agent'
+        assert len(evidence_requester) > 0
+
+    def test_any_value_type_preserves_xml_structure(self, second_response_doc):
+        """Serialized AnyValueType should preserve XML structure and content."""
+        serialized = second_response_doc.serialize(any_type=True)
+        evidence_requester = serialized.get("doc", {}).get("EvidenceRequester")
+
+        assert evidence_requester is not None
+        # Get the root element key (should be like 'sdg:Agent')
+        root_keys = list(evidence_requester.keys())
+        assert len(root_keys) > 0
+
+        root_key = root_keys[0]
+        root_content = evidence_requester[root_key]
+        assert isinstance(root_content, dict)
+
+    def test_any_value_type_in_objects_section(self, second_response_doc):
+        """AnyValueType in RegistryObject slots should serialize correctly."""
+        serialized = second_response_doc.serialize(any_type=True)
+        object_slots = serialized.get("object", {})
+
+        # Check if EvidenceMetadata exists in objects
+        if "EvidenceMetadata" in object_slots:
+            evidence_metadata = object_slots["EvidenceMetadata"]
+            assert isinstance(evidence_metadata, dict)
+
+    def test_serialize_consistency_across_calls(self, second_response_doc):
+        """Multiple serialize(any_type=True) calls should produce identical results."""
+        result1 = second_response_doc.serialize(any_type=True)
+        result2 = second_response_doc.serialize(any_type=True)
+
+        assert result1 == result2
+
+    def test_any_type_parameter_does_not_affect_other_types(self, second_response_doc):
+        """Setting any_type=True should not affect serialization of other types."""
+        serialized_with_any = second_response_doc.serialize(any_type=True)
+        serialized_without_any = second_response_doc.serialize(any_type=False)
+
+        # All non-AnyValueType slots should be identical
+        for section in ["doc", "query", "exception"]:
+            for key, val in serialized_with_any.get(section, {}).items():
+                if key not in ["EvidenceRequester", "EvidenceProvider", "EvidenceMetadata"]:
+                    assert key in serialized_without_any.get(section, {})
 

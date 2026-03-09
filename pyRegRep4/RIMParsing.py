@@ -2,9 +2,22 @@ import logging
 from enum import Enum
 from typing import Any, Dict, Optional, Tuple
 
+import xmltodict
 from lxml import etree
 
 _logger = logging.getLogger(__name__)
+
+
+def serialize_any_value_type(value: Any) -> Any:
+    """Convert XML elements from AnyValueType into plain dictionaries."""
+    if isinstance(value, etree._Element):
+        try:
+            xml_bytes = etree.tostring(value, encoding="utf-8")
+            return xmltodict.parse(xml_bytes)
+        except Exception as e:
+            _logger.warning(f"Не вдалося серіалізувати AnyValueType через xmltodict: {e}")
+            return etree.tostring(value, encoding="unicode")
+    return value
 
 
 class ValueTypes(str, Enum):
@@ -68,6 +81,22 @@ class Parsing:
         self._slots_cache: Optional[Dict[str, Any]] = None
         self.slots = self.__list_slots()
 
+    def _extract_namespaces(self) -> Dict[str, str]:
+        """
+        Витягти всі namespace з кореневого елемента XML.
+
+        Returns:
+            Словник у форматі {префікс: URI}
+        """
+        ns = {}
+        for k, v in self.doc.nsmap.items():
+            if k is not None and v is not None:
+                ns[k] = v
+                _logger.debug(f"Знайдено namespace: {k} -> {v}")
+            else:
+                _logger.warning(f"Пропущено некоректний namespace: {k} -> {v}")
+        return ns
+
     def __tname(self, ns: str, tag: str) -> str:
         """
         Побудувати повне ім'я тега з namespace.
@@ -108,7 +137,6 @@ class Parsing:
             raise ParsingError(f"Тип значення не можна витягти з: {type_attr}")
 
         return type_value
-
 
     def __value(self, slot: etree._Element) -> Tuple[str, Any]:
         """
@@ -243,7 +271,7 @@ class Parsing:
 
         return slots
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self, any_type: bool = False) -> Dict[str, Any]:
         """
         Серіалізувати слоти, перетворюючи типізовані значення на Python об'єкти.
 
@@ -253,7 +281,11 @@ class Parsing:
         - DateTimeValueType -> str (ISO format)
         - InternationalStringValueType -> list[dict]
         - CollectionValueType -> list
-        - AnyValueType -> Element або значення
+        - AnyValueType -> Element (default) або dict (якщо any_type=True)
+
+        Args:
+            any_type: Якщо True, перетворює AnyValueType елементи в dict через xmltodict.
+                     Якщо False (за замовчуванням), повертає lxml Element.
 
         Returns:
             Серіалізований словник без типової інформації
@@ -286,6 +318,8 @@ class Parsing:
                     return transform_data(value)
 
                 elif data_type == ValueTypes.ANY.value:
+                    if any_type:
+                        return serialize_any_value_type(value)
                     return value
 
                 elif data_type == ValueTypes.INTERNATIONAL_STRING.value:

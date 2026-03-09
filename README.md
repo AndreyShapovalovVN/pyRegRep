@@ -156,7 +156,7 @@ pyRegRep/
 
 ```bash
 cd tests
-python test_parsing_1.py
+python Example_1.py
 ```
 
 ## Логування
