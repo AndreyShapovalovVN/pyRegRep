@@ -4,63 +4,42 @@
 
 ## Опис
 
-**pyRegRep** - це інструмент для роботи з XML документами, що відповідають стандарту Registry Information Model (RIM), який часто використовується в системах eGovernment та обміну даними. Бібліотека дозволяє легко витягувати, аналізувати та серіалізувати дані з RIM/ebXML документів.
+**pyRegRep** — інструмент для роботи з XML документами стандарту Registry Information Model (RIM), що застосовується в системах eGovernment та обміну даними (зокрема, OOTS/EDM). Бібліотека дозволяє легко витягувати, аналізувати та серіалізувати дані з RIM/ebXML документів, а також програмно створювати коректні RIM-слоти різних типів.
 
 ## Можливості
 
-- ✅ Парсування RIM/ebXML XML документів
+- ✅ Парсування RIM/ebXML XML документів (`bytes` або `str`)
 - ✅ Автоматична обробка просторів імен (namespaces)
 - ✅ Витягування запитів (Query), винятків (Exception) та об'єктів реєстру (RegistryObject)
-- ✅ Обробка різних типів значень (Boolean, String, Collection, International String, Any Value)
-- ✅ Серіалізація даних у зручний Python формат (dict)
-- ✅ Підтримка складних структур даних та вкладених колекцій
+- ✅ Обробка всіх типів значень: Boolean, String, Integer, DateTime, Collection, InternationalString, AnyValue
+- ✅ Серіалізація даних у зручний Python-формат (`dict`)
+- ✅ Фабрика слотів `get_slot()` — програмне створення RIM-слотів за типом
+- ✅ Серіалізація `AnyValueType` через `xmltodict` (параметр `any_type=True`)
+- ✅ Підтримка вкладених колекцій та складних структур
 
 ## Вимоги
 
 - **Python**: >= 3.10
-- **Залежності**: 
-  - `lxml >= 5.2.1` - для роботи з XML
+- **Залежності**:
+  - `lxml >= 5.2.1` — робота з XML
+  - `xmltodict >= 0.13.0` — серіалізація `AnyValueType`
 
 ## Установка
 
-### З PyPI (якщо опубліковано)
-
 ```bash
+# З PyPI (якщо опубліковано)
 pip install pyRegRep
-```
 
-### З локального источника
-
-```bash
+# З локального джерела (editable)
 pip install -e .
-```
 
-Або через requirements.txt:
-
-```bash
+# Залежності вручну
 pip install -r requirements.txt
 ```
 
 ## Швидкий старт
 
-### Базовий приклад
-
-```python
-from pyRegRep4.RIMParsing import Parsing
-
-# Прочитайте XML файл
-with open("document.xml", "rb") as f:
-    xml_data = f.read()
-
-# Створіть об'єкт парсера
-parser = Parsing(xml_data)
-
-# Отримайте дані
-print(parser.slots)  # Словник всіх витягнутих даних
-print(parser.serialize())  # Серіалізовані та очищені дані
-```
-
-### Робота з запитами та винятками
+### Парсування XML документу
 
 ```python
 from pyRegRep4.RIMParsing import Parsing
@@ -68,84 +47,158 @@ from pyRegRep4.RIMParsing import Parsing
 with open("document.xml", "rb") as f:
     parser = Parsing(f.read())
 
-# Отримайте елементи документа
-if parser.query is not None:
-    print("Знайдено Query елемент")
+# Усі слоти у вигляді {category: {name: (type, value)}}
+print(parser.slots)
 
-if parser.exception is not None:
-    print("Знайдено Exception елемент")
+# Серіалізовані дані (без типової інформації)
+print(parser.serialize())
 
-# Отримайте об'єкти реєстру
-print(f"Всього об'єктів реєстру: {len(parser.objects)}")
+# Серіалізація з обробкою AnyValueType в dict
+print(parser.serialize(any_type=True))
+```
+
+### Програмне створення RIM-слотів
+
+```python
+import datetime
+from lxml import etree
+from pyRegRep4.RIMElement import get_slot
+
+# Текстовий слот
+slot = get_slot("SpecificationIdentifier", "StringValueType", "oots-edm:v1.2")
+print(slot.name)   # 'SpecificationIdentifier'
+print(slot.value)  # 'oots-edm:v1.2'
+print(slot.text)   # XML як bytes
+
+# Логічний слот
+slot = get_slot("PossibilityForPreview", "BooleanValueType", True)
+
+# Слот дата/час
+slot = get_slot("IssueDateTime", "DateTimeValueType", datetime.datetime.now())
+
+# Слот довільного XML (AnyValueType)
+elem = etree.Element("CustomData")
+elem.text = "Payload"
+slot = get_slot("CustomPayload", "AnyValueType", elem)
 ```
 
 ## API Довідник
 
-### Клас `Parsing`
+### Клас `Parsing` (`pyRegRep4.RIMParsing`)
 
 #### Конструктор
 
 ```python
-Parsing(doc: bytes)
+Parsing(doc: bytes | str)
 ```
 
-**Параметри:**
-- `doc` (bytes): Бінарні дані XML документа
+| Параметр | Тип | Опис |
+|----------|-----|------|
+| `doc` | `bytes \| str` | XML документ |
 
-**Атрибути:**
-- `xml` (str): XML як рядок
-- `doc` (etree._Element): Розібраний XML документ
-- `query` (etree._Element | None): Елемент Query з документа (якщо є)
-- `exception` (etree._Element | None): Елемент Exception з документа (якщо є)
-- `objects` (list): Список всіх RegistryObject елементів
-- `slots` (dict): Словник всіх витягнутих Slot елементів з типами
+#### Атрибути
 
-#### Методи
+| Атрибут | Тип | Опис |
+|---------|-----|------|
+| `xml` | `str` | XML як рядок |
+| `doc` | `etree._Element` | Розібраний XML документ |
+| `query` | `etree._Element \| None` | Елемент `Query` (якщо є) |
+| `exception` | `etree._Element \| None` | Елемент `Exception` (якщо є) |
+| `objects` | `list` | Список `RegistryObject` елементів |
+| `slots` | `dict` | Всі слоти у форматі `{category: {name: (type, value)}}` |
 
-**`serialize() -> dict`**
+Категорії `slots`: `"doc"`, `"query"`, `"exception"`, `"object"`.
 
-Серіалізує витягнені дані, перетворюючи типи значень:
-- `BooleanValueType` → `bool`
-- `StringValueType` → `str`
-- `CollectionValueType` → `list`
-- `InternationalStringValueType` → `list[dict]`
-- `AnyValueType` → `XML Element`
+#### Метод `serialize(any_type: bool = False) -> dict`
 
-**Повернення:** Словник серіалізованих даних
+Серіалізує слоти в чистий Python-формат, видаляючи типову інформацію.
 
-## Приклад використання
+| Тип значення | Python-результат |
+|---|---|
+| `BooleanValueType` | `bool` |
+| `StringValueType` | `str` |
+| `DateTimeValueType` | `str` (ISO format) |
+| `IntegerValueType` | `int` |
+| `CollectionValueType` | `list` |
+| `InternationalStringValueType` | `list[dict]` |
+| `AnyValueType` (за замовчуванням) | `etree._Element` |
+| `AnyValueType` (з `any_type=True`) | `dict` (через `xmltodict`) |
+
+---
+
+### Функція `get_slot()` (`pyRegRep4.RIMElement`)
 
 ```python
-from pyRegRep4.RIMParsing import Parsing
-
-# Завантаження XML
-with open("EDM_Response.xml", "rb") as f:
-    data = f.read()
-
-# Парсування
-parser = Parsing(data)
-
-# Отримання структурованих даних
-slots = parser.serialize()
-
-# Ітерація по даних
-for key, value in slots.items():
-    print(f"{key}: {value}")
+get_slot(name: str, slot_type: str, value: Any) -> Xml
 ```
+
+Фабрика для програмного створення RIM-слотів.
+
+| Параметр | Тип | Опис |
+|----------|-----|------|
+| `name` | `str` | Ім'я слота |
+| `slot_type` | `str` | Тип слота (див. таблицю нижче) |
+| `value` | `Any` | Значення слота |
+
+**Підтримані типи:**
+
+| `slot_type` | Тип `value` | Опис |
+|---|---|---|
+| `"StringValueType"` | `str` | Текстовий рядок |
+| `"BooleanValueType"` | `bool` | Логічне значення |
+| `"DateTimeValueType"` | `datetime.datetime` або `str` | Дата/час |
+| `"CollectionValueType"` | `etree._Element` | Колекція елементів |
+| `"AnyValueType"` | `etree._Element` | Довільний XML елемент |
+| `"InternationalStringValueType"` | `etree._Element` або `list[etree._Element]` | Багатомовний текст |
+
+**Повертає** об'єкт `Xml` з властивостями:
+- `name` — ім'я слота
+- `value` — значення
+- `element` — XML елемент (`etree._Element`)
+- `text` — серіалізований XML (`bytes`)
+
+**Викидає** `ValueError` при невідомому типі слота.
+
+```python
+try:
+    slot = get_slot("Bad", "UnknownType", "value")
+except ValueError as e:
+    print(e)  # Невідомий тип слота: UnknownType. Підтримувані типи: [...]
+```
+
+---
+
+### Клас `NS` (`pyRegRep4.NS`)
+
+Базовий клас для управління RIM namespace. Надає метод `_tname(prefix, localname)` для генерування кваліфікованих імен тегів у нотації Clark.
+
+---
+
+### Виняток `ParsingError` (`pyRegRep4.RIMParsing`)
+
+Базовий клас для помилок парсування. Кидається при некоректному XML або відсутньому namespace.
 
 ## Структура проекту
 
 ```
 pyRegRep/
 ├── pyRegRep4/
-│   ├── __init__.py
-│   └── RIMParsing.py       # Основна логіка парсування
+│   ├── __init__.py          # Експорт: get_slot та типи слотів
+│   ├── RIMElement.py        # Класи слотів + фабрика get_slot()
+│   ├── RIMParsing.py        # Парсер Parsing + serialize()
+│   └── NS.py                # Базовий клас для namespace
 ├── tests/
-│   ├── test_parsing_1.py    # Тести парсування
+│   ├── conftest.py          # sys.path для CI
+│   ├── test_rim_parsing.py  # Тести парсера
+│   ├── test_rim_element.py  # Тести get_slot() та типів слотів
 │   ├── EDM_Ferst_Request.xml
 │   ├── EDM_Ferst_Response.xml
 │   ├── EDM_Second_Request.xml
 │   └── EDM_Second_Response.xml
+├── example/
+│   ├── Example_1.py
+│   ├── example_anyvaluetype_usage.py
+│   └── example_get_slot_usage.py
 ├── setup.py
 ├── pyproject.toml
 ├── requirements.txt
@@ -155,17 +208,25 @@ pyRegRep/
 ## Запуск тестів
 
 ```bash
-cd tests
-python Example_1.py
+# Встановлення залежностей
+pip install lxml xmltodict pytest
+
+# Усі тести
+python -m pytest --disable-warnings -q
+
+# Тільки тести парсера
+python -m pytest tests/test_rim_parsing.py -v
+
+# Тільки тести слотів
+python -m pytest tests/test_rim_element.py -v
 ```
 
 ## Логування
 
-Бібліотека використовує модуль `logging` Python. Для включення логування:
+Бібліотека використовує стандартний `logging`. Для увімкнення:
 
 ```python
 import logging
-
 logging.basicConfig(level=logging.DEBUG)
 ```
 
@@ -173,39 +234,38 @@ logging.basicConfig(level=logging.DEBUG)
 
 ### Обробка просторів імен
 
-Бібліотека автоматично розпізнає та обробляє всі простори імен (namespaces) у XML документі:
-- Простір імен за замовчуванням позначається як `"default"`
-- Інші простори імен зберігаються під своїми префіксами
+Namespace витягуються автоматично з кореневого елемента документа та зберігаються у `parser._ns` у форматі `{prefix: uri}`.
 
-### Типи значень RIM
+### Формат `slots`
 
-Підтримуються наступні типи значень:
-- **BooleanValueType** - логічні значення
-- **StringValueType** - текстові значення
-- **IntegerValueType** - цілі числа
-- **CollectionValueType** - колекції значень
-- **InternationalStringValueType** - багатомовні рядки
-- **AnyValueType** - будь-які XML елементи
+```python
+{
+    "doc": {
+        "SpecificationIdentifier": ("StringValueType", "oots-edm:v1.2"),
+        "IssueDateTime": ("DateTimeValueType", "2024-03-15T10:30:00"),
+        "PossibilityForPreview": ("BooleanValueType", "false"),
+    },
+    "query": {},
+    "exception": {},
+    "object": {}
+}
+```
 
 ## Автор
 
-- **Andrey Shapovalov** (mt.andrey@gmail.com)
+**Andrey Shapovalov** — mt.andrey@gmail.com
 
 ## Ліцензія
 
-MIT License - див. файл [LICENSE](LICENSE)
-
-## Подяки
-
-Проект використовує бібліотеку [lxml](https://lxml.de/) для роботи з XML.
+MIT License — див. файл [LICENSE](LICENSE)
 
 ## Посилання
 
-- [Registry Information Model (RIM)](https://en.wikipedia.org/wiki/ebXML)
+- [ebXML / Registry Information Model](https://en.wikipedia.org/wiki/ebXML)
+- [OOTS EDM Specification](https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/OOTS)
 - [lxml Documentation](https://lxml.de/)
+- [xmltodict](https://github.com/martinblech/xmltodict)
 
 ---
 
-**Версія:** 6
-**Останнє оновлення:** 2026
-
+**Версія:** 7 · **Оновлено:** 2026-03-11

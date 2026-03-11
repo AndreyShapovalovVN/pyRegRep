@@ -318,3 +318,5 @@ fabric.properties
 __pycache__/
 *.pyc
 .idea
+
+docs

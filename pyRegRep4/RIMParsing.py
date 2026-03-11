@@ -51,11 +51,15 @@ class Parsing:
         slots: Кешований словник усіх слотів з документу
     """
 
-    def __init__(self, doc: bytes):
-        try:
+    def __init__(self, doc: bytes | str):
+
+        if isinstance(doc, bytes):
             self.xml = doc.decode("utf-8")
-        except UnicodeDecodeError as e:
-            raise ParsingError(f"Помилка декодування XML: {e}") from e
+        elif isinstance(doc, str):
+            self.xml = doc
+            doc = doc.encode("utf-8")  # Конвертуємо назад в bytes для lxml
+        else:
+            raise ParsingError(f"Невалідний тип даних для парсування: {type(doc)}. Очікується bytes або str.")
 
         try:
             parser = etree.XMLParser(remove_comments=True)
