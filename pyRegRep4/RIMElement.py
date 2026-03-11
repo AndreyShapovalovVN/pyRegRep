@@ -136,9 +136,28 @@ class _InternationalStringValueType(Xml):
         v = etree.SubElement(sv, self._tname("rim", "Value"))
         if isinstance(self.value, list):
             for item in self.value:
-                v.append(item)
+                if isinstance(item, etree._Element):
+                    v.append(item)
+                elif isinstance(item, dict):
+                    element = self._intenation_element(item)
+                    if element is not None:
+                        v.append(element)
+                else:
+                    _logger.warning(f"Unsupported item type in InternationalStringValueType: {type(item)}")
         else:
-            v.append(self.value)
+            if isinstance(self.value, etree._Element):
+                v.append(self.value)
+
+    def _intenation_element(self, item: dict) -> etree._Element | None:
+        if "lang" in item and "text" in item:
+            element = etree.Element(
+                self._tname("rim", "LocalizedString"), attrib={"lang": item["lang"]}
+            )
+            element.text = item["text"]
+            return element
+        else:
+            _logger.warning(f"Invalid item format for InternationalStringValueType: {item}")
+            return None
 
 def get_slot(name: str, slot_type: str, value: Any) -> Xml:
     """

@@ -272,9 +272,9 @@ class TestCollectionValueType:
 class TestInternationalStringValueType:
     """Test InternationalStringValueType slot creation."""
 
-    def test_international_string_single_element(self):
-        """Test InternationalStringValueType with single element."""
-        elem = etree.Element("LocalString")
+    def test_single_element(self):
+        """Single etree._Element is appended into Value."""
+        elem = etree.Element("LocalizedString")
         elem.text = "English text"
         elem.attrib["lang"] = "en"
 
@@ -282,24 +282,141 @@ class TestInternationalStringValueType:
         slot.name = "IntlSlot"
 
         assert slot.element is not None
-        assert slot.value == elem
+        assert slot.value is elem
 
-    def test_international_string_multiple_elements(self):
-        """Test InternationalStringValueType with list of elements."""
-        elems = [
-            etree.Element("LocalString"),
-            etree.Element("LocalString"),
-        ]
-        elems[0].text = "English"
-        elems[0].attrib["lang"] = "en"
-        elems[1].text = "Українська"
-        elems[1].attrib["lang"] = "uk"
+        # Value element should contain the child
+        slot_value = slot.element.find(".//{*}SlotValue")
+        assert slot_value is not None
+        value_el = slot_value.find(".//{*}Value")
+        assert value_el is not None
+        assert len(value_el) == 1
+
+    def test_list_of_elements(self):
+        """List of etree._Element objects: each one appended into Value."""
+        elems = []
+        for lang, text in [("en", "English"), ("uk", "Українська"), ("de", "Deutsch")]:
+            e = etree.Element("LocalizedString")
+            e.attrib["lang"] = lang
+            e.text = text
+            elems.append(e)
 
         slot = _InternationalStringValueType(elems)
         slot.name = "IntlMultiSlot"
 
         assert slot.element is not None
-        assert len(slot.value) == 2
+        value_el = slot.element.find(".//{*}SlotValue/{*}Value")
+        assert value_el is not None
+        assert len(value_el) == 3
+
+    def test_list_of_dicts(self):
+        """List of dicts with 'lang'/'text' keys creates LocalizedString elements."""
+        data = [
+            {"lang": "en", "text": "Hello"},
+            {"lang": "uk", "text": "Привіт"},
+        ]
+
+        slot = _InternationalStringValueType(data)
+        slot.name = "DictSlot"
+
+        value_el = slot.element.find(".//{*}SlotValue/{*}Value")
+        assert value_el is not None
+        assert len(value_el) == 2
+        # Verify lang attributes
+        langs = {child.attrib.get("lang") for child in value_el}
+        assert langs == {"en", "uk"}
+        # Verify text
+        texts = {child.text for child in value_el}
+        assert "Hello" in texts
+        assert "Привіт" in texts
+
+    def test_list_of_dicts_invalid_items_skipped(self, caplog):
+        """Dict items missing 'lang' or 'text' are skipped with a warning."""
+        import logging
+        data = [
+            {"lang": "en", "text": "Good"},
+            {"foo": "bar"},            # invalid – missing keys
+            {"lang": "de"},            # invalid – missing text
+        ]
+
+        with caplog.at_level(logging.WARNING, logger="pyRegRep4.RIMElement"):
+            slot = _InternationalStringValueType(data)
+            slot.name = "PartialSlot"
+
+        value_el = slot.element.find(".//{*}SlotValue/{*}Value")
+        # Only the first valid dict should produce a child element
+        assert len(value_el) == 1
+        # Two distinct invalid items → at least 2 warnings (may double due to name setter)
+        unique_messages = {r.message for r in caplog.records}
+        assert len(unique_messages) == 2
+
+    def test_list_mixed_elements_and_dicts(self):
+        """List may contain both etree._Element and dict items."""
+        e = etree.Element("LocalizedString")
+        e.attrib["lang"] = "en"
+        e.text = "From element"
+
+        data = [e, {"lang": "uk", "text": "Від словника"}]
+
+        slot = _InternationalStringValueType(data)
+        slot.name = "MixedSlot"
+
+        value_el = slot.element.find(".//{*}SlotValue/{*}Value")
+        assert len(value_el) == 2
+
+    def test_list_with_unsupported_type_skipped(self, caplog):
+        """Non-Element, non-dict items in list are skipped with a warning."""
+        import logging
+        data = ["plain string", 42, None]
+
+        with caplog.at_level(logging.WARNING, logger="pyRegRep4.RIMElement"):
+            slot = _InternationalStringValueType(data)
+            slot.name = "BadSlot"
+
+        value_el = slot.element.find(".//{*}SlotValue/{*}Value")
+        # No children added
+        assert len(value_el) == 0
+        # Three distinct unsupported types → 3 unique warning messages
+        unique_messages = {r.message for r in caplog.records}
+        assert len(unique_messages) == 3
+
+    def test_xsi_type_attribute(self):
+        """SlotValue must carry xsi:type=rim:InternationalStringValueType."""
+        elem = etree.Element("LocalizedString")
+        slot = _InternationalStringValueType(elem)
+        slot.name = "TypeCheck"
+
+        slot_value = slot.element.find(".//{*}SlotValue")
+        assert slot_value is not None
+        type_attrs = [v for k, v in slot_value.attrib.items() if "type" in k]
+        assert any("InternationalStringValueType" in v for v in type_attrs)
+
+    def test_serialization_to_bytes(self):
+        """text property returns valid XML bytes containing InternationalStringValueType."""
+        elem = etree.Element("LocalizedString")
+        elem.text = "Test"
+        slot = _InternationalStringValueType(elem)
+        slot.name = "SerialSlot"
+
+        xml_bytes = slot.text
+        assert isinstance(xml_bytes, bytes)
+        assert b"InternationalStringValueType" in xml_bytes
+
+    def test_get_slot_international_string(self):
+        """get_slot with InternationalStringValueType returns correct instance."""
+        elem = etree.Element("LocalizedString")
+        slot = get_slot("IntlSlot", "InternationalStringValueType", elem)
+        assert isinstance(slot, _InternationalStringValueType)
+        assert slot.name == "IntlSlot"
+
+    def test_name_setter_rebuilds_element(self):
+        """Setting name after creation rebuilds the XML element."""
+        elem = etree.Element("LocalizedString")
+        elem.text = "Hello"
+        slot = _InternationalStringValueType(elem)
+        slot.name = "First"
+        assert slot.element.attrib.get("name") == "First"
+        slot.name = "Second"
+        assert slot.element.attrib.get("name") == "Second"
 
 
 class TestSlotElementGeneration:

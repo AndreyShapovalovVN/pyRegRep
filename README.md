@@ -76,7 +76,17 @@ slot = get_slot("PossibilityForPreview", "BooleanValueType", True)
 # Слот дата/час
 slot = get_slot("IssueDateTime", "DateTimeValueType", datetime.datetime.now())
 
-# Слот довільного XML (AnyValueType)
+# Багатомовний слот через dict-список
+slot = get_slot(
+    "Title",
+    "InternationalStringValueType",
+    [
+        {"lang": "en", "text": "Birth Certificate"},
+        {"lang": "uk", "text": "Свідоцтво про народження"},
+    ],
+)
+
+# Довільний XML (AnyValueType)
 elem = etree.Element("CustomData")
 elem.text = "Payload"
 slot = get_slot("CustomPayload", "AnyValueType", elem)
@@ -120,7 +130,7 @@ Parsing(doc: bytes | str)
 | `DateTimeValueType` | `str` (ISO format) |
 | `IntegerValueType` | `int` |
 | `CollectionValueType` | `list` |
-| `InternationalStringValueType` | `list[dict]` |
+| `InternationalStringValueType` | `list[dict]` з ключами `lang`/`text` |
 | `AnyValueType` (за замовчуванням) | `etree._Element` |
 | `AnyValueType` (з `any_type=True`) | `dict` (через `xmltodict`) |
 
@@ -149,7 +159,7 @@ get_slot(name: str, slot_type: str, value: Any) -> Xml
 | `"DateTimeValueType"` | `datetime.datetime` або `str` | Дата/час |
 | `"CollectionValueType"` | `etree._Element` | Колекція елементів |
 | `"AnyValueType"` | `etree._Element` | Довільний XML елемент |
-| `"InternationalStringValueType"` | `etree._Element` або `list[etree._Element]` | Багатомовний текст |
+| `"InternationalStringValueType"` | `etree._Element`, `list[etree._Element]` або `list[dict]` | Багатомовний текст |
 
 **Повертає** об'єкт `Xml` з властивостями:
 - `name` — ім'я слота
@@ -268,4 +278,4 @@ MIT License — див. файл [LICENSE](LICENSE)
 
 ---
 
-**Версія:** 7 · **Оновлено:** 2026-03-11
+**Версія:** 7.1 · **Оновлено:** 2026-03-11
