@@ -17,7 +17,7 @@ class NS:
 
     def __init__(self):
         """Initialize namespace handling."""
-        self._ns: Dict[str, str] = self.DEFAULT_NAMESPACES.copy()
+        self._ns: Dict[str, str] = self.DEFAULT_NAMESPACES.copy()  # type: ignore
 
     def _tname(self, prefix: str, localname: str) -> str:
         """

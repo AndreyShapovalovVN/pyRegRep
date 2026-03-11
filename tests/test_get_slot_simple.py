@@ -52,7 +52,7 @@ def test_basic_functionality():
     # Test 5: Invalid type handling
     print("5. Testing error handling...")
     try:
-        invalid_slot = get_slot("Invalid", "InvalidType", "value")
+        _ = get_slot("Invalid", "InvalidType", "value")
         print("   ✗ Error handling failed - should raise ValueError")
         return False
     except ValueError as e:
