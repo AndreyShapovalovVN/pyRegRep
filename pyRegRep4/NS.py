@@ -13,6 +13,7 @@ class NS:
         "rs": "urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0",
         "xsi": "http://www.w3.org/2001/XMLSchema-instance",
         "xsd": "http://www.w3.org/2001/XMLSchema",
+        "xml": "http://www.w3.org/XML/1998/namespace",
     }
 
     def __init__(self):

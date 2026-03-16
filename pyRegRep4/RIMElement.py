@@ -27,7 +27,8 @@ class Xml(NS):
         if self._element is not None:
             self._create_element()
 
-    def _create_element(self): ...
+    def _create_element(self):
+        ...
 
     @property
     def element(self) -> etree._Element:
@@ -151,13 +152,17 @@ class _InternationalStringValueType(Xml):
     def _intenation_element(self, item: dict) -> etree._Element | None:
         if "lang" in item and "text" in item:
             element = etree.Element(
-                self._tname("rim", "LocalizedString"), attrib={"lang": item["lang"]}
+                self._tname("rim", "LocalizedString"),
+                attrib={
+                    self._tname("xml", "lang"): item["lang"],
+                    "value": item["text"]
+                }
             )
-            element.text = item["text"]
             return element
         else:
             _logger.warning(f"Invalid item format for InternationalStringValueType: {item}")
             return None
+
 
 def get_slot(name: str, slot_type: str, value: Any) -> Xml:
     """

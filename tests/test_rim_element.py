@@ -310,6 +310,7 @@ class TestInternationalStringValueType:
 
     def test_list_of_dicts(self):
         """List of dicts with 'lang'/'text' keys creates LocalizedString elements."""
+        XML_NS = "http://www.w3.org/XML/1998/namespace"
         data = [
             {"lang": "en", "text": "Hello"},
             {"lang": "uk", "text": "Привіт"},
@@ -321,11 +322,11 @@ class TestInternationalStringValueType:
         value_el = slot.element.find(".//{*}SlotValue/{*}Value")
         assert value_el is not None
         assert len(value_el) == 2
-        # Verify lang attributes
-        langs = {child.attrib.get("lang") for child in value_el}
+        # lang is stored as {http://www.w3.org/XML/1998/namespace}lang attribute
+        langs = {child.attrib.get(f"{{{XML_NS}}}lang") for child in value_el}
         assert langs == {"en", "uk"}
-        # Verify text
-        texts = {child.text for child in value_el}
+        # text is stored in "value" attribute (not .text)
+        texts = {child.attrib.get("value") for child in value_el}
         assert "Hello" in texts
         assert "Привіт" in texts
 
@@ -351,6 +352,7 @@ class TestInternationalStringValueType:
 
     def test_list_mixed_elements_and_dicts(self):
         """List may contain both etree._Element and dict items."""
+        XML_NS = "http://www.w3.org/XML/1998/namespace"
         e = etree.Element("LocalizedString")
         e.attrib["lang"] = "en"
         e.text = "From element"
@@ -362,6 +364,10 @@ class TestInternationalStringValueType:
 
         value_el = slot.element.find(".//{*}SlotValue/{*}Value")
         assert len(value_el) == 2
+        # dict item stores lang as xml:lang attribute
+        dict_child = value_el[1]
+        assert dict_child.attrib.get(f"{{{XML_NS}}}lang") == "uk"
+        assert dict_child.attrib.get("value") == "Від словника"
 
     def test_list_with_unsupported_type_skipped(self, caplog):
         """Non-Element, non-dict items in list are skipped with a warning."""
