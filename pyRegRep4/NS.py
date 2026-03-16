@@ -8,9 +8,9 @@ class NS:
 
     # Default namespaces for RIM/ebXML documents
     DEFAULT_NAMESPACES = {
-        "rim": "urn:oasis:names:tc:ebxml-regrep:xsd:rim:3.0",
-        "query": "urn:oasis:names:tc:ebxml-regrep:xsd:query:3.0",
-        "rs": "urn:oasis:names:tc:ebxml-regrep:xsd:rs:3.0",
+        "rim": "urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0",
+        "query": "urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0",
+        "rs": "urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0",
         "xsi": "http://www.w3.org/2001/XMLSchema-instance",
         "xsd": "http://www.w3.org/2001/XMLSchema",
     }

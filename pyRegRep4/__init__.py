@@ -31,6 +31,6 @@ __all__ = [
     "_InternationalStringValueType",
 ]
 
-__version__ = "8"
+__version__ = "9"
 __author__ = "Andrey Shapovalov"
 
