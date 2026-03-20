@@ -32,10 +32,9 @@ pip install pyRegRep
 
 # З локального джерела (editable)
 pip install -e .
-
-# Залежності вручну
-pip install -r requirements.txt
 ```
+
+Під час встановлення через `pip install pyRegRep` або `pip install -e .` runtime-залежності (`lxml`, `xmltodict`) встановлюються автоматично.
 
 ## Швидкий старт
 
@@ -278,4 +277,4 @@ MIT License — див. файл [LICENSE](LICENSE)
 
 ---
 
-**Версія:** 10 · **Оновлено:** 2026-03-11
+**Версія:** 11 · **Оновлено:** 2026-03-11

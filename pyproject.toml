@@ -4,12 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyRegRep"
-version = "10"
+version = "11"
 description = "Your package description"
 authors = [{ name="Andrey Shapovalov" }]
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+	"lxml>=5.2.1",
+	"xmltodict>=0.13.0",
+]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
