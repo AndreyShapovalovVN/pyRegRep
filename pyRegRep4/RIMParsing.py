@@ -73,12 +73,20 @@ class Parsing:
         # Витягування основних елементів
         try:
             self.query = self.doc.find(".//query:Query", namespaces=self._ns)
-            self.exception = self.doc.find(".//rs:Exception", namespaces=self._ns)
-            self.objects = self.doc.findall(".//rim:RegistryObject", namespaces=self._ns)
-        except KeyError as e:
+        except Exception as e:
             _logger.warning(f"Namespace не знайдено: {e}")
             self.query = None
+
+        try:
+            self.exception = self.doc.find(".//rs:Exception", namespaces=self._ns)
+        except Exception as e:
+            _logger.warning(f"Namespace не знайдено: {e}")
             self.exception = None
+
+        try:
+            self.objects = self.doc.findall(".//rim:RegistryObject", namespaces=self._ns)
+        except Exception as e:
+            _logger.warning(f"Namespace не знайдено: {e}")
             self.objects = []
 
         # Кешований результат
