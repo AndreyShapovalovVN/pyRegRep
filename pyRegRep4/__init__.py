@@ -9,28 +9,15 @@ Main Components:
 - RIMParsing: Parser for reading and extracting data from RIM documents
 """
 
-from pyRegRep4.RIMElement import (
-    get_slot,
-    Xml,
-    _StringValueType,
-    _BooleanValueType,
-    _TimeStamp,
-    _CollectionValueType,
-    _AnyValueType,
-    _InternationalStringValueType,
-)
+from pyRegRep4.RIMElement import get_slot
 from pyRegRep4.utils import deep_get
+from pyRegRep4.RIMParsing import Parsing, serialize_any_value_type
 
 __all__ = [
     "get_slot",
-    "Xml",
-    "_StringValueType",
-    "_BooleanValueType",
-    "_TimeStamp",
-    "_CollectionValueType",
-    "_AnyValueType",
-    "_InternationalStringValueType",
     "deep_get",
+    "Parsing",
+    "serialize_any_value_type",
 ]
 
 __version__ = "12"
