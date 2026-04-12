@@ -19,6 +19,7 @@ from pyRegRep4.RIMElement import (
     _AnyValueType,
     _InternationalStringValueType,
 )
+from pyRegRep4.utils import deep_get
 
 __all__ = [
     "get_slot",
@@ -29,8 +30,9 @@ __all__ = [
     "_CollectionValueType",
     "_AnyValueType",
     "_InternationalStringValueType",
+    "deep_get",
 ]
 
-__version__ = "11"
+__version__ = "12"
 __author__ = "Andrey Shapovalov"
 

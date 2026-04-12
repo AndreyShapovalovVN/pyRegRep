@@ -16,6 +16,7 @@
 - ✅ Фабрика слотів `get_slot()` — програмне створення RIM-слотів за типом
 - ✅ Серіалізація `AnyValueType` через `xmltodict` (параметр `any_type=True`)
 - ✅ Підтримка вкладених колекцій та складних структур
+- ✅ Безпечний доступ до вкладених даних через `deep_get()`
 
 ## Вимоги
 
@@ -54,6 +55,12 @@ print(parser.serialize())
 
 # Серіалізація з обробкою AnyValueType в dict
 print(parser.serialize(any_type=True))
+
+from pyRegRep4 import deep_get
+
+# Безпечний доступ до вкладених ключів
+spec_id = deep_get(parser.serialize(), "doc", "SpecificationIdentifier", default="unknown")
+print(spec_id)
 ```
 
 ### Програмне створення RIM-слотів
@@ -177,6 +184,43 @@ except ValueError as e:
 
 ---
 
+### Функція `deep_get()` (`pyRegRep4.utils`)
+
+```python
+deep_get(data: dict, *keys, default=None)
+```
+
+Безпечно дістає значення з вкладеного `dict` за послідовністю ключів.
+
+| Параметр | Тип | Опис |
+|----------|-----|------|
+| `data` | `dict` | Джерело даних |
+| `*keys` | `Any` | Шлях ключів для проходу по вкладеному словнику |
+| `default` | `Any` | Значення за замовчуванням, якщо шлях не знайдено |
+
+**Поведінка:**
+- якщо на будь-якому кроці значення не є `dict` — повертається `default`
+- якщо кінцеве значення `None` — повертається `default`
+- якщо `keys` не передані — повертається `data`
+
+```python
+from pyRegRep4 import deep_get
+
+data = {
+    "doc": {
+        "Procedure": [{"lang": "en", "value": "GetBirthCertificate"}]
+    }
+}
+
+value = deep_get(data, "doc", "Procedure", 0, "value", default="n/a")
+print(value)  # n/a (бо deep_get працює тільки з dict-ланцюжком)
+
+procedure = deep_get(data, "doc", "Procedure", default=[])
+print(procedure)  # [{"lang": "en", "value": "GetBirthCertificate"}]
+```
+
+---
+
 ### Клас `NS` (`pyRegRep4.NS`)
 
 Базовий клас для управління RIM namespace. Надає метод `_tname(prefix, localname)` для генерування кваліфікованих імен тегів у нотації Clark.
@@ -195,11 +239,13 @@ pyRegRep/
 │   ├── __init__.py          # Експорт: get_slot та типи слотів
 │   ├── RIMElement.py        # Класи слотів + фабрика get_slot()
 │   ├── RIMParsing.py        # Парсер Parsing + serialize()
+│   ├── utils.py             # deep_get() для вкладених словників
 │   └── NS.py                # Базовий клас для namespace
 ├── tests/
 │   ├── conftest.py          # sys.path для CI
 │   ├── test_rim_parsing.py  # Тести парсера
 │   ├── test_rim_element.py  # Тести get_slot() та типів слотів
+│   ├── test_utils.py        # Тести deep_get()
 │   ├── EDM_Ferst_Request.xml
 │   ├── EDM_Ferst_Response.xml
 │   ├── EDM_Second_Request.xml
@@ -277,4 +323,4 @@ MIT License — див. файл [LICENSE](LICENSE)
 
 ---
 
-**Версія:** 11 · **Оновлено:** 2026-03-11
+**Версія:** 12 · **Оновлено:** 2026-04-12
