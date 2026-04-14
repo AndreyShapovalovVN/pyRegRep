@@ -1,6 +1,7 @@
 import datetime
 import logging
-from typing import Any
+from abc import ABC, abstractmethod
+from typing import Any, Callable
 
 from lxml import etree
 
@@ -8,27 +9,21 @@ from pyRegRep4.NS import NS
 
 _logger = logging.getLogger(__name__)
 
+__all__ = [
+    "get_slot",
+    "RegistryObject",
+    "RepositoryItemRef",
+    "QueryResponse",
+    "Classification"
+]
 
-class Xml(NS):
-    def __init__(self, value: Any):
+
+class _ElementContainer(NS):
+    """Internal base for simple classes that wrap a single XML element."""
+
+    def __init__(self) -> None:
         super().__init__()
-        self._name: str = ""
-        self.value: Any = value
         self._element: etree._Element | None = None
-        self._create_element()
-
-    @property
-    def name(self) -> str:
-        return self._name
-
-    @name.setter
-    def name(self, value: str) -> None:
-        self._name = value
-        if self._element is not None:
-            self._create_element()
-
-    def _create_element(self):
-        ...
 
     @property
     def element(self) -> etree._Element:
@@ -41,8 +36,32 @@ class Xml(NS):
         return etree.tostring(self.element)
 
 
+class Xml(ABC, _ElementContainer):
+    """Base class for slot-like XML objects that carry value and name."""
+
+    def __init__(self, value: Any):
+        super().__init__()
+        self._name: str = ""
+        self.value: Any = value
+        self.create_element()
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @name.setter
+    def name(self, value: str) -> None:
+        self._name = value
+        if self._element is not None:
+            self.create_element()
+
+    @abstractmethod
+    def create_element(self):
+        ...
+
+
 class _BooleanValueType(Xml):
-    def _create_element(self):
+    def create_element(self):
         self._element = etree.Element(
             self._tname("rim", "Slot"), nsmap=self._ns,
             attrib={"name": self.name}
@@ -56,7 +75,7 @@ class _BooleanValueType(Xml):
 
 
 class _StringValueType(Xml):
-    def _create_element(self):
+    def create_element(self):
         self._element = etree.Element(
             self._tname("rim", "Slot"), nsmap=self._ns,
             attrib={"name": self.name}
@@ -70,7 +89,7 @@ class _StringValueType(Xml):
 
 
 class _TimeStamp(Xml):
-    def _create_element(self):
+    def create_element(self):
         self._element = etree.Element(
             self._tname("rim", "Slot"), nsmap=self._ns,
             attrib={"name": self.name}
@@ -87,7 +106,7 @@ class _TimeStamp(Xml):
 
 
 class _CollectionValueType(Xml):
-    def _create_element(self):
+    def create_element(self):
         self._element = etree.Element(
             self._tname("rim", "Slot"), nsmap=self._ns,
             attrib={"name": self.name}
@@ -110,7 +129,7 @@ class _CollectionValueType(Xml):
 
 
 class _AnyValueType(Xml):
-    def _create_element(self):
+    def create_element(self):
         self._element = etree.Element(
             self._tname("rim", "Slot"), nsmap=self._ns,
             attrib={"name": self.name}
@@ -124,7 +143,7 @@ class _AnyValueType(Xml):
 
 
 class _InternationalStringValueType(Xml):
-    def _create_element(self):
+    def create_element(self):
         self._element = etree.Element(
             self._tname("rim", "Slot"), nsmap=self._ns,
             attrib={"name": self.name}
@@ -226,7 +245,7 @@ def get_slot(name: str, slot_type: str, value: Any) -> Xml:
         ... except ValueError as e:
         ...     print(f"Error: {e}")
     """
-    slot_type_map = {
+    slot_type_map: dict[str, Callable[[Any], Xml]] = {
         "StringValueType": _StringValueType,
         "BooleanValueType": _BooleanValueType,
         "DateTimeValueType": _TimeStamp,
@@ -242,3 +261,64 @@ def get_slot(name: str, slot_type: str, value: Any) -> Xml:
     slot = slot_class(value)
     slot.name = name
     return slot
+
+
+class RegistryObject(_ElementContainer):
+    """Builder for rim:RegistryObject elements."""
+
+    def create_element(self, type: str, id: str):
+        self._element = etree.Element(
+            self._tname("rim", "RegistryObject"),
+            nsmap=self._ns,
+            attrib={
+                self._tname("xsi", "type"): type,
+                "id": id
+            }
+        )
+        return self
+
+
+class RepositoryItemRef(_ElementContainer):
+    """Builder for rim:RepositoryItemRef elements."""
+
+    def create_element(self, href: str, title: str | None = None):
+        attr = {self._tname("xlink", "href"): href}
+        if title is not None:
+            attr["title"] = title
+
+        self._element = etree.Element(
+            self._tname("rim", "RepositoryItemRef"),
+            nsmap=self._ns,
+            attrib=attr
+        )
+        return self
+
+
+class QueryResponse(_ElementContainer):
+    """Builder for query:QueryResponse elements."""
+
+    def create_element(self, status: str, request_id: str):
+        self._element = etree.Element(
+            self._tname("query", "QueryResponse"), nsmap=self._ns,
+            attrib={
+                'status': status,
+                'requestId': request_id,
+            }
+        )
+        return self
+
+
+class Classification(_ElementContainer):
+    """Builder for rim:Classification elements."""
+
+    def create_element(self, id: str, classification_scheme: str, classification_node: str):
+        self._element = etree.Element(
+            self._tname("rim", "Classification"),
+            nsmap=self._ns,
+            attrib={
+                "id": id,
+                "classificationScheme": classification_scheme,
+                "classificationNode": classification_node
+            }
+        )
+        return self

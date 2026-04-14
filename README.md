@@ -14,6 +14,7 @@
 - ✅ Обробка всіх типів значень: Boolean, String, Integer, DateTime, Collection, InternationalString, AnyValue
 - ✅ Серіалізація даних у зручний Python-формат (`dict`)
 - ✅ Фабрика слотів `get_slot()` — програмне створення RIM-слотів за типом
+- ✅ Builder-класи для елементів `RegistryObject`, `RepositoryItemRef`, `QueryResponse`, `Classification`
 - ✅ Серіалізація `AnyValueType` через `xmltodict` (параметр `any_type=True`)
 - ✅ Підтримка вкладених колекцій та складних структур
 - ✅ Безпечний доступ до вкладених даних через `deep_get()`
@@ -184,6 +185,38 @@ except ValueError as e:
 
 ---
 
+### Builder-класи XML елементів (`pyRegRep4.RIMElement`)
+
+Публічні класи для побудови типових елементів RIM/query:
+
+- `RegistryObject`
+- `RepositoryItemRef`
+- `QueryResponse`
+- `Classification`
+
+Усі класи мають однаковий базовий контракт:
+- `element` — повертає `etree._Element` (або `ValueError`, якщо елемент ще не створено)
+- `text` — серіалізований XML (`bytes`)
+- `create_element(...)` — будує XML елемент і повертає `self` (chain-style)
+
+```python
+from pyRegRep4.RIMElement import RepositoryItemRef, QueryResponse
+
+ref = RepositoryItemRef().create_element(
+    "https://example.org/document.xml",
+    "Document",
+)
+print(ref.text)
+
+response = QueryResponse().create_element(
+    "urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Success",
+    "req-1",
+)
+print(response.element.tag)
+```
+
+---
+
 ### Функція `deep_get()` (`pyRegRep4.utils`)
 
 ```python
@@ -236,7 +269,7 @@ print(procedure)  # [{"lang": "en", "value": "GetBirthCertificate"}]
 ```
 pyRegRep/
 ├── pyRegRep4/
-│   ├── __init__.py          # Експорт: get_slot та типи слотів
+│   ├── __init__.py          # Експорт: get_slot, deep_get, Parsing, serialize_any_value_type
 │   ├── RIMElement.py        # Класи слотів + фабрика get_slot()
 │   ├── RIMParsing.py        # Парсер Parsing + serialize()
 │   ├── utils.py             # deep_get() для вкладених словників
@@ -323,4 +356,4 @@ MIT License — див. файл [LICENSE](LICENSE)
 
 ---
 
-**Версія:** 12 · **Оновлено:** 2026-04-12
+**Версія:** 13 · **Оновлено:** 2026-04-14

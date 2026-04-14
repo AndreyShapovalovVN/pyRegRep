@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="pyRegRep",
-    version="12",
+    version="13",
     description="Бібліотека для роботи з реєстрами та репозитаріями в Україні",
     packages=find_packages(),
     license="MIT",

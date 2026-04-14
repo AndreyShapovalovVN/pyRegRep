@@ -18,6 +18,10 @@ from pyRegRep4.RIMElement import (
     _CollectionValueType,
     _AnyValueType,
     _InternationalStringValueType,
+    RegistryObject,
+    RepositoryItemRef,
+    QueryResponse,
+    Classification,
 )
 
 
@@ -466,5 +470,40 @@ class TestSlotElementGeneration:
         assert slot.name == test_name
         assert slot.value == test_value
         assert slot.element.attrib.get("name") == test_name
+
+
+class TestSimpleElementContainers:
+    """Regression tests for classes sharing common element/text behavior."""
+
+    @pytest.mark.parametrize(
+        "obj",
+        [RegistryObject(), RepositoryItemRef(), QueryResponse(), Classification()],
+    )
+    def test_element_raises_before_create(self, obj):
+        with pytest.raises(ValueError, match="XML element is not initialized"):
+            _ = obj.element
+
+    def test_registry_object_create_and_serialize(self):
+        obj = RegistryObject()
+        assert obj.create_element("rim:ExtrinsicObject", "urn:uuid:test") is obj
+        assert b"RegistryObject" in obj.text
+
+    def test_repository_item_ref_create_and_serialize(self):
+        obj = RepositoryItemRef()
+        assert obj.create_element("https://example.org/doc.xml", "Doc") is obj
+        assert b"RepositoryItemRef" in obj.text
+        assert b"xlink:href" in obj.text
+
+    def test_query_response_create_and_serialize(self):
+        obj = QueryResponse()
+        assert obj.create_element(
+            "urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Success", "req-1"
+        ) is obj
+        assert b"QueryResponse" in obj.text
+
+    def test_classification_create_and_serialize(self):
+        obj = Classification()
+        assert obj.create_element("urn:uuid:cls", "urn:scheme", "Annex") is obj
+        assert b"Classification" in obj.text
 
 
