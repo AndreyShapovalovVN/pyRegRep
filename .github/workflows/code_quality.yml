@@ -33,7 +33,7 @@ jobs:
 
       # Запуск тестів
       - name: Run tests with pytest
-      run: |
+        run: |
           uv run pytest --maxfail=2 --disable-warnings --ignore-glob='tests/~*.py'
 
       # Видалення Docker імеджу після перевірки
