@@ -1,6 +1,6 @@
 import logging
 from enum import Enum
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import xmltodict
 from lxml import etree
@@ -59,7 +59,10 @@ class Parsing:
             self.xml = doc
             doc = doc.encode("utf-8")  # Конвертуємо назад в bytes для lxml
         else:
-            raise ParsingError(f"Невалідний тип даних для парсування: {type(doc)}. Очікується bytes або str.")
+            raise ParsingError(
+                f"Невалідний тип даних для парсування: {type(doc)}. "
+                "Очікується bytes або str."
+            )
 
         try:
             parser = etree.XMLParser(remove_comments=True)
@@ -90,10 +93,10 @@ class Parsing:
             self.objects = []
 
         # Кешований результат
-        self._slots_cache: Optional[Dict[str, Any]] = None
+        self._slots_cache: dict[str, Any] | None = None
         self.slots = self.__list_slots()
 
-    def _extract_namespaces(self) -> Dict[str, str]:
+    def _extract_namespaces(self) -> dict[str, str]:
         """
         Витягти всі namespace з кореневого елемента XML.
 
@@ -108,6 +111,21 @@ class Parsing:
             else:
                 _logger.warning(f"Пропущено некоректний namespace: {k} -> {v}")
         return ns
+
+    def __safe_add_slot(
+        self,
+        target: dict[str, tuple[str, Any]],
+        slot: etree._Element,
+        context: str,
+    ) -> None:
+        name = slot.get("name")
+        if not name:
+            return
+
+        try:
+            target[name] = self.__value(slot)
+        except ParsingError as e:
+            _logger.exception(f"Помилка парсування слота '{context}/{name}': {e}")
 
     def __tname(self, ns: str, tag: str) -> str:
         """
@@ -150,201 +168,210 @@ class Parsing:
 
         return type_value
 
-    def __value(self, slot: etree._Element) -> Tuple[str, Any]:
-        """
-        Витягти значення зі слота з його типом.
-
-        Args:
-            slot: XML елемент слота
-
-        Returns:
-            Кортеж (тип_значення, значення)
-
-        Raises:
-            ParsingError: Якщо слот має неправильну структуру
-        """
+    def __get_slot_value(self, slot: etree._Element) -> etree._Element:
         if len(slot) == 0:
             raise ParsingError(f"Слот '{slot.get('name')}' не має дочірніх елементів")
 
-        slot_value = slot[0]  # Отримати SlotValue елемент
-        type_attr = slot_value.get(self.__tname("xsi", "type"), '')
+        return slot[0]
+
+    def __get_slot_value_type(self, slot_value: etree._Element) -> str:
+        type_attr = slot_value.get(self.__tname("xsi", "type"), "")
 
         try:
-            type_ = self.__extract_type(type_attr)
+            return self.__extract_type(type_attr)
         except ParsingError as e:
-            _logger.error(f"Помилка витягування типу для слота: {e}")
+            _logger.exception(f"Помилка витягування типу для слота: {e}")
             raise
 
-        # Обробка різних типів значень
+    def __parse_slot_value(self, type_: str, slot_value: etree._Element) -> Any:
+        if ValueTypes.ANY.value in type_:
+            return self.__parse_any_value(slot_value)
+
+        if ValueTypes.INTERNATIONAL_STRING.value in type_:
+            return self.__parse_international_string(slot_value)
+
+        if ValueTypes.COLLECTION.value in type_:
+            return self.__parse_collection(slot_value)
+
+        return self.__parse_simple_value(slot_value)
+
+    def __parse_any_value(self, slot_value: etree._Element) -> Any:
+        return slot_value[0] if len(slot_value) > 0 else None
+
+    def __parse_international_string(self, slot_value: etree._Element) -> list[dict[str, Any]]:
+        values: list[dict[str, Any]] = []
+
+        if len(slot_value) == 0:
+            return values
+
+        for item in slot_value[0]:
+            values.append(
+                {
+                    "lang": item.get(self.__tname("xsi", "lang")),
+                    "value": item.get("value"),
+                }
+            )
+
+        return values
+
+    def __parse_collection(self, slot_value: etree._Element) -> list[tuple[str, Any]]:
+        values = []
+
+        for item in slot_value:
+            wrapper = etree.Element("wrapper")
+            wrapper.append(item)
+            values.append(self.__value(wrapper))
+
+        return values
+
+    def __parse_simple_value(self, slot_value: etree._Element) -> Any:
+        if len(slot_value) > 0 and len(slot_value[0]) > 0:
+            return slot_value[0][0].text
+
+        if len(slot_value) > 0:
+            return slot_value[0].text
+
+        return None
+
+    def __value(self, slot: etree._Element) -> tuple[str, Any]:
+        slot_value = self.__get_slot_value(slot)
+        type_ = self.__get_slot_value_type(slot_value)
+
         try:
-            if ValueTypes.ANY.value in type_:
-                return type_, slot_value[0] if len(slot_value) > 0 else None
-
-            elif ValueTypes.INTERNATIONAL_STRING.value in type_:
-                values = []
-                for item in slot_value[0]:
-                    value = {
-                        "lang": item.get(self.__tname("xsi", "lang")),
-                        "value": item.get("value"),
-                    }
-                    values.append(value)
-                return type_, values
-
-            elif ValueTypes.COLLECTION.value in type_:
-                values = []
-                for item in slot_value:
-                    wrapper = etree.Element("wrapper")
-                    wrapper.append(item)
-                    values.append(self.__value(wrapper))  # type: ignore
-                return type_, values
-
-            else:
-                # Прості типи: String, Boolean, DateTime тощо
-                if len(slot_value) > 0 and len(slot_value[0]) > 0:
-                    return type_, slot_value[0][0].text
-                elif len(slot_value) > 0:
-                    return type_, slot_value[0].text
-                else:
-                    return type_, None
+            return type_, self.__parse_slot_value(type_, slot_value)
         except (IndexError, AttributeError) as e:
-            _logger.error(f"Помилка обробки значення типу {type_}: {e}")
+            _logger.exception(f"Помилка обробки значення типу {type_}: {e}")
             raise ParsingError(f"Помилка обробки значення: {e}") from e
 
-    def __list_slots(self) -> Dict[str, Dict[str, Tuple[str, Any]]]:
-        """
-        Витягти всі слоти з документу та організувати їх за категоріями.
+    def __process_root_element(
+        self,
+        element: etree._Element,
+        slots: dict[str, dict[str, Any]],
+    ) -> None:
+        if element.tag == self.__tname("rim", "Slot"):
+            self.__safe_add_slot(slots["doc"], element, "doc")
+            return
 
-        Returns:
-            Словник структури: {категорія: {ім'я_слота: (тип, значення)}}
-        """
-        slots: Dict[str, Dict[str, Tuple[str, Any]]] = {
+        if element.tag == self.__tname("query", "Query"):
+            self.__process_slot_container(element, slots["query"], "query")
+            return
+
+        if element.tag == self.__tname("rs", "Exception"):
+            self.__process_slot_container(element, slots["exception"], "exception")
+            return
+
+        if element.tag == self.__tname("rim", "RegistryObjectList"):
+            self.__process_registry_object_list(element, slots["object"])
+
+    def __process_slot_container(
+        self,
+        container: etree._Element,
+        target: dict[str, Any],
+        context: str,
+    ) -> None:
+        for item in container:
+            self.__safe_add_slot(target, item, context)
+
+    def __process_registry_object_list(
+        self,
+        registry_object_list: etree._Element,
+        target: dict[str, Any],
+    ) -> None:
+        for registry_object in registry_object_list:
+            obj_data = self.__process_registry_object(registry_object)
+
+            if obj_data:
+                target.update(obj_data)
+
+    def __process_registry_object(
+        self,
+        registry_object: etree._Element,
+    ) -> dict[str, Any]:
+        obj_data: dict[str, Any] = {}
+
+        for child in registry_object:
+            if child.tag == self.__tname("rim", "Slot"):
+                self.__safe_add_slot(obj_data, child, "object")
+
+            elif child.tag == self.__tname("rim", "RepositoryItemRef"):
+                obj_data["RepositoryItemRef"] = self.__repository_item_ref(child)
+
+        return obj_data
+
+    def __repository_item_ref(self, element: etree._Element) -> dict[str, str | None]:
+        return {
+            "xlink": element.get(self.__tname("xlink", "href")),
+            "title": element.get(self.__tname("xlink", "title")),
+        }
+
+    def __list_slots(self) -> dict[str, dict[str, Any]]:
+        slots: dict[str, dict[str, Any]] = {
             "doc": {},
             "query": {},
             "exception": {},
-            "object": {}
+            "object": {},
         }
 
         for element in self.doc:
             try:
-                # Слоти на рівні документу
-                if element.tag == self.__tname("rim", "Slot"):
-                    name = element.get("name")
-                    if name:
-                        try:
-                            slots["doc"][name] = self.__value(element)
-                        except ParsingError as e:
-                            _logger.error(f"Помилка парсування слота 'doc/{name}': {e}")
-
-                # Query елементи
-                elif element.tag == self.__tname("query", "Query"):
-                    for query_item in element:
-                        name = query_item.get("name")
-                        if name:
-                            try:
-                                slots["query"][name] = self.__value(query_item)
-                            except ParsingError as e:
-                                _logger.error(f"Помилка парсування слота 'query/{name}': {e}")
-
-                # Exception елементи
-                elif element.tag == self.__tname("rs", "Exception"):
-                    for exc_item in element:
-                        name = exc_item.get("name")
-                        if name:
-                            try:
-                                slots["exception"][name] = self.__value(exc_item)
-                            except ParsingError as e:
-                                _logger.error(f"Помилка парсування слота 'exception/{name}': {e}")
-
-                # RegistryObject елементи
-                elif element.tag == self.__tname("rim", "RegistryObjectList"):
-                    for registry_object in element:
-                        obj_data: Dict[str, Any] = {}
-                        for child_element in registry_object:
-                            if child_element.tag == self.__tname("rim", "Slot"):
-                                name = child_element.get("name")
-                                if name:
-                                    try:
-                                        obj_data[name] = self.__value(child_element)
-                                    except ParsingError as e:
-                                        _logger.error(f"Помилка парсування слота 'object/{name}': {e}")
-
-                            elif child_element.tag == self.__tname("rim", "RepositoryItemRef"):
-                                obj_data["RepositoryItemRef"] = {
-                                    "xlink": child_element.get(self.__tname("xlink", "href")),
-                                    "title": child_element.get(self.__tname("xlink", "title")),
-                                }
-
-                        if obj_data:
-                            slots["object"].update(obj_data)
-
+                self.__process_root_element(element, slots)
             except Exception as e:
-                _logger.error(f"Неочікувана помилка при обробці елемента: {e}")
-                continue
+                _logger.exception(f"Неочікувана помилка при обробці елемента: {e}")
 
         return slots
 
-    def serialize(self, any_type: bool = False) -> Dict[str, Any]:
-        """
-        Серіалізувати слоти, перетворюючи типізовані значення на Python об'єкти.
+    def __transform_serialized_value(self, data: Any, any_type: bool) -> Any:
+        if isinstance(data, list):
+            return [self.__transform_serialized_value(item, any_type) for item in data]
 
-        Перетворює:
-        - BooleanValueType -> bool
-        - StringValueType -> str
-        - DateTimeValueType -> str (ISO format)
-        - InternationalStringValueType -> list[dict]
-        - CollectionValueType -> list
-        - AnyValueType -> Element (default) або dict (якщо any_type=True)
+        if isinstance(data, dict):
+            return {
+                key: self.__transform_serialized_value(value, any_type)
+                for key, value in data.items()
+            }
 
-        Args:
-            any_type: Якщо True, перетворює AnyValueType елементи в dict через xmltodict.
-                     Якщо False (за замовчуванням), повертає lxml Element.
-
-        Returns:
-            Серіалізований словник без типової інформації
-        """
-
-        def transform_data(data: Any) -> Any:
-            """Рекурсивно трансформувати дані, видаляючи тип-інформацію."""
-            if isinstance(data, list):
-                return [transform_data(item) for item in data]
-
-            elif isinstance(data, dict):
-                return {k: transform_data(v) for k, v in data.items()}
-
-            elif isinstance(data, tuple) and len(data) == 2:
-                data_type, value = data
-
-                # Перетворення типів значень
-                if data_type == ValueTypes.BOOLEAN.value:
-                    if isinstance(value, str):
-                        return value.lower() == 'true'
-                    return bool(value)
-
-                elif data_type == ValueTypes.STRING.value:
-                    return value.strip() if isinstance(value, str) else value
-
-                elif data_type == ValueTypes.DATETIME.value:
-                    return value.strip() if isinstance(value, str) else value
-
-                elif data_type == ValueTypes.COLLECTION.value:
-                    return transform_data(value)
-
-                elif data_type == ValueTypes.ANY.value:
-                    if any_type:
-                        return serialize_any_value_type(value)
-                    return value
-
-                elif data_type == ValueTypes.INTERNATIONAL_STRING.value:
-                    return transform_data(value)
-
-                elif data_type == ValueTypes.INTEGER.value:
-                    return int(value) if value else None
-
-                # Невідомий тип - повернути значення як є
-                else:
-                    _logger.warning(f"Невідомий тип значення: {data_type}")
-                    return transform_data(value) if isinstance(value, (list, dict)) else value
-
+        if not isinstance(data, tuple) or len(data) != 2:
             return data
 
-        return transform_data(self.slots)
+        data_type, value = data
+        return self.__transform_value_by_type(data_type, value, any_type)
+
+    def __transform_value_by_type(
+        self,
+        data_type: str,
+        value: Any,
+        any_type: bool,
+    ) -> Any:
+        if data_type == ValueTypes.BOOLEAN.value:
+            return value.lower() == "true" if isinstance(value, str) else bool(value)
+
+        if data_type in {
+            ValueTypes.STRING.value,
+            ValueTypes.DATETIME.value,
+        }:
+            return value.strip() if isinstance(value, str) else value
+
+        if data_type == ValueTypes.INTEGER.value:
+            return int(value) if value else None
+
+        if data_type == ValueTypes.COLLECTION.value:
+            return self.__transform_serialized_value(value, any_type)
+
+        if data_type == ValueTypes.ANY.value:
+            return serialize_any_value_type(value) if any_type else value
+
+        if data_type == ValueTypes.INTERNATIONAL_STRING.value:
+            return self.__transform_serialized_value(value, any_type)
+
+        _logger.warning(f"Невідомий тип значення: {data_type}")
+        return (
+            self.__transform_serialized_value(value, any_type)
+            if isinstance(value, (list, dict))
+            else value
+        )
+
+    def serialize(self, any_type: bool = False) -> dict[str, Any]:
+        serialized = self.__transform_serialized_value(self.slots, any_type)
+        if isinstance(serialized, dict):
+            return serialized
+        raise ParsingError("Очікувався словник після серіалізації слотів")

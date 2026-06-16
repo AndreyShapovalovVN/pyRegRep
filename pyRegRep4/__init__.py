@@ -16,8 +16,8 @@ from pyRegRep4.RIMElement import (
     RepositoryItemRef,
     get_slot,
 )
-from pyRegRep4.utils import deep_get
 from pyRegRep4.RIMParsing import Parsing, serialize_any_value_type
+from pyRegRep4.utils import deep_get
 
 __all__ = [
     "get_slot",

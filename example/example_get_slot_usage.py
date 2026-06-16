@@ -12,7 +12,9 @@ based on the slot type. It supports the following RIM slot value types:
 """
 
 import datetime
+
 from lxml import etree
+
 from pyRegRep4.RIMElement import get_slot
 
 # Example 1: Create a StringValueType slot

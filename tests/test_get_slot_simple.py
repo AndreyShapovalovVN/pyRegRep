@@ -3,14 +3,16 @@
 Simple test script to verify get_slot() functionality.
 """
 
-import sys
 import datetime
+import sys
+
 from lxml import etree
 
 # Add the project root to the path
 sys.path.insert(0, '/home/andrey/OOTS/pyRegRep')
 
-from pyRegRep4.RIMElement import get_slot, _StringValueType, _AnyValueType
+from pyRegRep4.RIMElement import _AnyValueType, _StringValueType, get_slot
+
 
 def test_basic_functionality():
     """Test basic get_slot() functionality."""

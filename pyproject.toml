@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyRegRep"
-version = "13"
+version = "14"
 description = "Бібліотека для роботи з реєстрами та репозитаріями в Україні"
 authors = [
     { name = "Andrii Shapovalov", email = "mt.andrey@gmail.com" }

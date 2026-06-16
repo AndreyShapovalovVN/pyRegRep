@@ -8,20 +8,22 @@ Tests cover:
 """
 
 import datetime
+
 import pytest
 from lxml import etree
+
 from pyRegRep4.RIMElement import (
-    get_slot,
-    _StringValueType,
-    _BooleanValueType,
-    _TimeStamp,
-    _CollectionValueType,
-    _AnyValueType,
-    _InternationalStringValueType,
+    Classification,
+    QueryResponse,
     RegistryObject,
     RepositoryItemRef,
-    QueryResponse,
-    Classification,
+    _AnyValueType,
+    _BooleanValueType,
+    _CollectionValueType,
+    _InternationalStringValueType,
+    _StringValueType,
+    _TimeStamp,
+    get_slot,
 )
 
 

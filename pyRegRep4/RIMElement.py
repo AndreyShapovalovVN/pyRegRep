@@ -1,7 +1,8 @@
 import datetime
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from lxml import etree
 
@@ -163,7 +164,10 @@ class _InternationalStringValueType(Xml):
                     if element is not None:
                         v.append(element)
                 else:
-                    _logger.warning(f"Unsupported item type in InternationalStringValueType: {type(item)}")
+                    _logger.warning(
+                        "Unsupported item type in InternationalStringValueType: %s",
+                        type(item),
+                    )
         else:
             if isinstance(self.value, etree._Element):
                 v.append(self.value)
@@ -256,7 +260,10 @@ def get_slot(name: str, slot_type: str, value: Any) -> Xml:
 
     slot_class = slot_type_map.get(slot_type)
     if slot_class is None:
-        raise ValueError(f"Невідомий тип слота: {slot_type}. Підтримувані типи: {list(slot_type_map.keys())}")
+        supported_types = list(slot_type_map.keys())
+        raise ValueError(
+            f"Невідомий тип слота: {slot_type}. Підтримувані типи: {supported_types}"
+        )
 
     slot = slot_class(value)
     slot.name = name

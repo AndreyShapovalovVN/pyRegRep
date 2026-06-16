@@ -1,6 +1,5 @@
 """Namespace management for RIM/ebXML documents."""
 
-from typing import Dict
 
 
 class NS:
@@ -19,7 +18,7 @@ class NS:
 
     def __init__(self):
         """Initialize namespace handling."""
-        self._ns: Dict[str, str] = self.DEFAULT_NAMESPACES.copy()  # type: ignore
+        self._ns: dict[str, str] = self.DEFAULT_NAMESPACES.copy()  # type: ignore
 
     def _tname(self, prefix: str, localname: str) -> str:
         """
@@ -37,7 +36,7 @@ class NS:
 
         return f"{{{self._ns[prefix]}}}{localname}"
 
-    def _extract_namespaces(self) -> Dict[str, str]:
+    def _extract_namespaces(self) -> dict[str, str]:
         """
         Extract namespaces from the document.
         Override this method in subclasses if needed.
@@ -48,7 +47,7 @@ class NS:
         return self._ns.copy()
 
     @property
-    def ns(self) -> Dict[str, str]:
+    def ns(self) -> dict[str, str]:
         """Get the namespace mappings."""
         return self._ns.copy()
 

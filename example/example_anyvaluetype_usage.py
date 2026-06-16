@@ -4,11 +4,14 @@
 
 Демонструє обидва режими: Element (за замовчуванням) та dict (з any_type=True).
 """
-
-from pathlib import Path
-from pyRegRep4.RIMParsing import Parsing
-from lxml import etree
 import json
+from pathlib import Path
+
+from lxml import etree
+
+from pyRegRep4.RIMParsing import Parsing
+
+FERST_REQUEST_XML = Path("../tests/EDM_Ferst_Request.xml")
 
 
 def example_default_mode():
@@ -17,7 +20,7 @@ def example_default_mode():
     print("Приклад 1: Режим за замовчуванням (any_type=False)")
     print("=" * 60)
 
-    xml_file = Path("../tests/EDM_Ferst_Request.xml")
+    xml_file = FERST_REQUEST_XML
     if not xml_file.exists():
         print(f"Файл {xml_file} не знайдено")
         return
@@ -42,7 +45,7 @@ def example_serialized_mode():
     print("Приклад 2: Режим серіалізації (any_type=True)")
     print("=" * 60)
 
-    xml_file = Path("../tests/EDM_Ferst_Request.xml")
+    xml_file = FERST_REQUEST_XML
     if not xml_file.exists():
         print(f"Файл {xml_file} не знайдено")
         return
@@ -68,7 +71,7 @@ def example_collection_mode():
     print("Приклад 3: CollectionValueType з AnyValueType")
     print("=" * 60)
 
-    xml_file = Path("../tests/EDM_Ferst_Request.xml")
+    xml_file = FERST_REQUEST_XML
     if not xml_file.exists():
         print(f"Файл {xml_file} не знайдено")
         return
@@ -126,7 +129,7 @@ def example_consistency():
     print("Приклад 5: Консистентність викликів serialize()")
     print("=" * 60)
 
-    xml_file = Path("../tests/EDM_Ferst_Request.xml")
+    xml_file = FERST_REQUEST_XML
     if not xml_file.exists():
         print(f"Файл {xml_file} не знайдено")
         return

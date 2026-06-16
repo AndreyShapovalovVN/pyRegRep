@@ -9,7 +9,8 @@ def deep_get(data: dict[Any, Any], *keys: str, default: Any = None) -> Any:
     Args:
         data: Source dictionary.
         *keys: Sequence of keys to traverse.
-        default: Value returned when the key path is missing or the intermediate value is not a dict.
+        default: Value returned when the key path is missing or the
+            intermediate value is not a dict.
 
     Returns:
         Value by key path or "default" when the path cannot be resolved.
@@ -20,4 +21,3 @@ def deep_get(data: dict[Any, Any], *keys: str, default: Any = None) -> Any:
             return default
         current = current.get(key)
     return current if current is not None else default
-

@@ -9,11 +9,12 @@ Tests cover:
 """
 
 import inspect
+from pathlib import Path
+
 import pytest
 from lxml import etree
-from pathlib import Path
-from pyRegRep4.RIMParsing import Parsing
 
+from pyRegRep4.RIMParsing import Parsing
 
 # Test data directory
 TEST_DATA_DIR = Path(__file__).parent
@@ -53,7 +54,11 @@ class TestParsingBasics:
         assert first_request._ns is not None
         assert isinstance(first_request._ns, dict)
         # Common namespaces in RIM documents
-        assert any(ns for ns in first_request._ns.values() if "rim" in ns.lower() or "regrep" in ns.lower())
+        assert any(
+            ns
+            for ns in first_request._ns.values()
+            if "rim" in ns.lower() or "regrep" in ns.lower()
+        )
 
     def test_slots_structure(self, first_request):
         """Test that slots dictionary has expected structure."""
@@ -140,7 +145,7 @@ class TestValueTypeParsing:
         preview = doc_slots.get("PossibilityForPreview")
 
         assert preview is not None
-        type_name, value = preview
+        type_name, _ = preview
         assert "BooleanValueType" in type_name
 
     def test_international_string_value_type(self, request_doc):
@@ -194,7 +199,11 @@ class TestSerialization:
         for key, value in doc_slots.items():
             if value is not None:
                 # Should not be (type, value) tuples anymore
-                assert not (isinstance(value, tuple) and len(value) == 2 and isinstance(value[0], str))
+                assert not (
+                    isinstance(value, tuple)
+                    and len(value) == 2
+                    and isinstance(value[0], str)
+                )
 
     def test_serialize_string_value(self, request_doc):
         """Test serialization of string values."""
@@ -238,7 +247,10 @@ class TestSerialization:
     def test_serialize_any_value_type_to_dict(self, request_doc):
         """AnyValueType with any_type=True should be serialized to a plain dictionary."""
         if not _supports_any_type_argument(request_doc):
-            pytest.skip("serialize(any_type=...) is not supported in the current Parsing implementation")
+            pytest.skip(
+                "serialize(any_type=...) is not supported "
+                "in the current Parsing implementation"
+            )
 
         serialized = request_doc.serialize(any_type=True)
         evidence_provider = serialized.get("doc", {}).get("EvidenceProvider")
@@ -262,7 +274,10 @@ class TestSerialization:
     def test_serialize_collection_with_any_value_type(self, request_doc):
         """CollectionValueType with AnyValueType items (any_type=True) should serialize to dicts."""
         if not _supports_any_type_argument(request_doc):
-            pytest.skip("serialize(any_type=...) is not supported in the current Parsing implementation")
+            pytest.skip(
+                "serialize(any_type=...) is not supported "
+                "in the current Parsing implementation"
+            )
 
         serialized = request_doc.serialize(any_type=True)
         requirements = serialized.get("doc", {}).get("Requirements")
@@ -290,7 +305,6 @@ class TestMultipleFiles:
         with open(xml_file, "rb") as f:
             parsing = Parsing(f.read())
 
-        assert parsing is not None
         assert parsing.slots is not None
         assert isinstance(parsing.slots, dict)
 
@@ -329,7 +343,6 @@ class TestEdgeCases:
                     xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0">
 </query:QueryRequest>'''
         parsing = Parsing(minimal_xml)
-        assert parsing is not None
         assert isinstance(parsing.slots, dict)
 
     @pytest.fixture
@@ -375,9 +388,12 @@ class TestAnyValueTypeSerialization:
         assert isinstance(evidence_requester, etree._Element)
 
     def test_any_value_type_single_element_serialized(self, second_response_doc):
-        """Single AnyValueType element (any_type=True) should be dict with namespace-aware keys."""
+        """Single AnyValueType element (any_type=True) should be namespace-aware dict."""
         if not _supports_any_type_argument(second_response_doc):
-            pytest.skip("serialize(any_type=...) is not supported in the current Parsing implementation")
+            pytest.skip(
+                "serialize(any_type=...) is not supported "
+                "in the current Parsing implementation"
+            )
 
         serialized = second_response_doc.serialize(any_type=True)
         evidence_requester = serialized.get("doc", {}).get("EvidenceRequester")
@@ -389,7 +405,10 @@ class TestAnyValueTypeSerialization:
     def test_any_value_type_preserves_xml_structure(self, second_response_doc):
         """Serialized AnyValueType should preserve XML structure and content."""
         if not _supports_any_type_argument(second_response_doc):
-            pytest.skip("serialize(any_type=...) is not supported in the current Parsing implementation")
+            pytest.skip(
+                "serialize(any_type=...) is not supported "
+                "in the current Parsing implementation"
+            )
 
         serialized = second_response_doc.serialize(any_type=True)
         evidence_requester = serialized.get("doc", {}).get("EvidenceRequester")
@@ -405,7 +424,10 @@ class TestAnyValueTypeSerialization:
     def test_any_value_type_in_objects_section(self, second_response_doc):
         """AnyValueType in RegistryObject slots should serialize correctly."""
         if not _supports_any_type_argument(second_response_doc):
-            pytest.skip("serialize(any_type=...) is not supported in the current Parsing implementation")
+            pytest.skip(
+                "serialize(any_type=...) is not supported "
+                "in the current Parsing implementation"
+            )
 
         serialized = second_response_doc.serialize(any_type=True)
         object_slots = serialized.get("object", {})
@@ -415,9 +437,12 @@ class TestAnyValueTypeSerialization:
             assert isinstance(evidence_metadata, dict)
 
     def test_serialize_consistency_across_calls(self, second_response_doc):
-        """Multiple serialize(any_type=True) calls should produce identical results."""
+        """Multiple serialize(any_type=True) calls should return identical results."""
         if not _supports_any_type_argument(second_response_doc):
-            pytest.skip("serialize(any_type=...) is not supported in the current Parsing implementation")
+            pytest.skip(
+                "serialize(any_type=...) is not supported "
+                "in the current Parsing implementation"
+            )
 
         result1 = second_response_doc.serialize(any_type=True)
         result2 = second_response_doc.serialize(any_type=True)
@@ -427,7 +452,10 @@ class TestAnyValueTypeSerialization:
     def test_any_type_parameter_does_not_affect_other_types(self, second_response_doc):
         """Setting any_type=True should not affect serialization of other types."""
         if not _supports_any_type_argument(second_response_doc):
-            pytest.skip("serialize(any_type=...) is not supported in the current Parsing implementation")
+            pytest.skip(
+                "serialize(any_type=...) is not supported "
+                "in the current Parsing implementation"
+            )
 
         serialized_with_any = second_response_doc.serialize(any_type=True)
         serialized_without_any = second_response_doc.serialize(any_type=False)
@@ -436,4 +464,3 @@ class TestAnyValueTypeSerialization:
             for key, val in serialized_with_any.get(section, {}).items():
                 if key not in ["EvidenceRequester", "EvidenceProvider", "EvidenceMetadata"]:
                     assert key in serialized_without_any.get(section, {})
-

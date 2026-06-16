@@ -1,5 +1,6 @@
-from pyRegRep4.RIMParsing import Parsing
 import logging
+
+from pyRegRep4.RIMParsing import Parsing
 
 logging.basicConfig(level=logging.DEBUG)
 _logger = logging.getLogger(__name__)

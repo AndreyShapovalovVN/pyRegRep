@@ -1,5 +1,5 @@
-from pathlib import Path
 import sys
+from pathlib import Path
 
 # Ensure project root is importable in CI environments that run pytest from a different CWD.
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
