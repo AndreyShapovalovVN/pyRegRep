@@ -21,20 +21,20 @@ jobs:
         uses: astral-sh/setup-uv@v2
 
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --group dev
 
       # Ruff — это невероятно быстрый линтер и форматер (заменяет Flake8, Isort, Black)
       - name: Lint with Ruff
-        run: ruff check . --extend-exclude 'tests/~*.py'
+        run: uv run ruff check . --extend-exclude 'tests/~*.py'
 
       # Проверка типов (опционально, но крайне рекомендуется)
       - name: Type check with mypy
-        run: mypy . --ignore-missing-imports --pretty --show-error-codes --exclude 'tests/~.*\.py$'
+        run: uv run mypy . --ignore-missing-imports --pretty --show-error-codes --exclude 'tests/~.*\.py$'
 
       # Запуск тестів
       - name: Run tests with pytest
-        run: |
-          pytest --maxfail=2 --disable-warnings --ignore-glob='tests/~*.py'
+      run: |
+          uv run pytest --maxfail=2 --disable-warnings --ignore-glob='tests/~*.py'
 
       # Видалення Docker імеджу після перевірки
       - name: Clean up Docker image

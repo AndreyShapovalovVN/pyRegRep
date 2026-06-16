@@ -2,7 +2,7 @@ import datetime
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 from lxml import etree
 
@@ -34,7 +34,7 @@ class _ElementContainer(NS):
 
     @property
     def text(self) -> bytes:
-        return etree.tostring(self.element)
+        return cast(bytes, etree.tostring(self.element, encoding="utf-8"))
 
 
 class Xml(ABC, _ElementContainer):
