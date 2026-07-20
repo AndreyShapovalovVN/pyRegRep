@@ -10,10 +10,10 @@ class NS:
         "rim": "urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0",
         "query": "urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0",
         "rs": "urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0",
-        "xsi": "http://www.w3.org/2001/XMLSchema-instance",
-        "xsd": "http://www.w3.org/2001/XMLSchema",
-        "xlink": "http://www.w3.org/1999/xlink",
-        "xml": "http://www.w3.org/XML/1998/namespace",
+        "xsi": "http://www.w3.org/2001/XMLSchema-instance",  # NOSONAR
+        "xsd": "http://www.w3.org/2001/XMLSchema",  # NOSONAR
+        "xlink": "http://www.w3.org/1999/xlink",  # NOSONAR
+        "xml": "http://www.w3.org/XML/1998/namespace",  # NOSONAR
     }
 
     def __init__(self):
