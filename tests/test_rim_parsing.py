@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 from lxml import etree
 
-from pyRegRep4.RIMParsing import Parsing
+from pyRegRep4.RIMParsing import Parsing, ParsingError
 
 # Test data directory
 TEST_DATA_DIR = Path(__file__).parent
@@ -329,10 +329,10 @@ class TestEdgeCases:
     """Test edge cases and error handling."""
 
     def test_invalid_xml_raises_error(self):
-        """Test that invalid XML raises XMLSyntaxError."""
+        """Test that invalid XML raises ParsingError."""
         invalid_xml = b"<invalid>not closed"
 
-        with pytest.raises(etree.XMLSyntaxError):
+        with pytest.raises(ParsingError):
             Parsing(invalid_xml)
 
     def test_empty_xml_handling(self):
