@@ -16,13 +16,7 @@ dependencies = [
     "lxml>=5.2.1",
     "xmltodict>=0.13.0",
 ]
-dev = [
-    "pytest>=9.1.1",
-    "pytest-cov>=4.0.0",
-    "mypy>=1.13.0",
-    "black>=23.0.0",
-    "ruff>=0.15.21",
-]
+
 keywords = ["registry", "repositories", "ukraine"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -75,9 +69,11 @@ target-version = "py310"
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP"]
 
-[dependency-groups]
+[project.optional-dependencies]
 dev = [
-    "mypy>=1.10.0",
-    "pytest>=8.2.0",
-    "ruff>=0.4.0",
+    "black>=23.0.0",
+    "mypy>=1.13.0",
+    "pytest>=9.1.1",
+    "pytest-cov>=4.0.0",
+    "ruff>=0.15.21",
 ]
