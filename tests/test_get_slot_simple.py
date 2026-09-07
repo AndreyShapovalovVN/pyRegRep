@@ -6,10 +6,8 @@ Simple test script to verify get_slot() functionality.
 import datetime
 import sys
 
+import pytest
 from lxml import etree
-
-# Add the project root to the path
-sys.path.insert(0, '/home/andrey/OOTS/pyRegRep')
 
 from pyRegRep4.RIMElement import _AnyValueType, _StringValueType, get_slot
 
@@ -53,13 +51,9 @@ def test_basic_functionality():
 
     # Test 5: Invalid type handling
     print("5. Testing error handling...")
-    try:
-        _ = get_slot("Invalid", "InvalidType", "value")
-        print("   ✗ Error handling failed - should raise ValueError")
-        return False
-    except ValueError as e:
-        assert "Невідомий тип слота" in str(e)
-        print("   ✓ Error handling works correctly")
+    with pytest.raises(ValueError, match="Невідомий тип слота"):
+        get_slot("Invalid", "InvalidType", "value")
+    print("   ✓ Error handling works correctly")
 
     # Test 6: XML generation
     print("6. Testing XML generation...")
@@ -73,15 +67,14 @@ def test_basic_functionality():
     print("\n" + "=" * 60)
     print("All tests passed! ✓")
     print("=" * 60)
-    return True
+
 
 if __name__ == "__main__":
     try:
-        success = test_basic_functionality()
-        sys.exit(0 if success else 1)
+        test_basic_functionality()
     except Exception as e:
         print(f"\n✗ Test failed with error: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
-

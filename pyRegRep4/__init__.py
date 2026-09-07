@@ -30,6 +30,5 @@ __all__ = [
     "serialize_any_value_type",
 ]
 
-__version__ = "13"
+__version__ = "15"
 __author__ = "Andrey Shapovalov"
-

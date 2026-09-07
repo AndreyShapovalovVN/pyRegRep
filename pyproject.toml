@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyRegRep"
-version = "14"
+version = "15"
 description = "Бібліотека для роботи з реєстрами та репозитаріями в Україні"
 authors = [
     { name = "Andrii Shapovalov", email = "mt.andrey@gmail.com" }
 ]
 readme = "README.md"
-license = { text = "MIT" }
+license = "MIT"
 requires-python = ">=3.10"
 dependencies = [
     "lxml>=5.2.1",
@@ -21,7 +21,6 @@ keywords = ["registry", "repositories", "ukraine"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -75,8 +74,10 @@ select = ["E", "F", "W", "I", "UP"]
 [project.optional-dependencies]
 dev = [
     "black>=23.0.0",
+    "build>=1.2.2",
     "mypy>=1.13.0",
     "pytest>=9.1.1",
     "pytest-cov>=4.0.0",
     "ruff>=0.15.21",
+    "twine>=6.2.0",
 ]

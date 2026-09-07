@@ -28,15 +28,22 @@
 
 ## Установка
 
-```bash
-# З PyPI (якщо опубліковано)
-pip install pyRegRep
+Проєкт використовує `uv` як менеджер залежностей і середовище розробки.
 
-# З локального джерела (editable)
-pip install -e .
+```bash
+# Створити віртуальне середовище та встановити пакет з dev-залежностями
+uv sync --extra dev
+
+# Або встановити лише пакет без dev-залежностей
+uv pip install -e .
 ```
 
-Під час встановлення через `pip install pyRegRep` або `pip install -e .` runtime-залежності (`lxml`, `xmltodict`) встановлюються автоматично.
+Після цього можна запускати команди через `uv run`, наприклад:
+
+```bash
+uv run pytest
+uv run ruff check .
+```
 
 ## Швидкий старт
 
@@ -287,26 +294,29 @@ pyRegRep/
 │   ├── Example_1.py
 │   ├── example_anyvaluetype_usage.py
 │   └── example_get_slot_usage.py
-├── setup.py
 ├── pyproject.toml
-├── requirements.txt
-└── README.md
+├── uv.lock
+├── README.md
+└── .github/workflows/
 ```
 
 ## Запуск тестів
 
 ```bash
-# Встановлення залежностей
-pip install lxml xmltodict pytest
+# Встановити залежності проекту
+uv sync --extra dev
 
 # Усі тести
-python -m pytest --disable-warnings -q
+uv run pytest --disable-warnings -q
 
 # Тільки тести парсера
-python -m pytest tests/test_rim_parsing.py -v
+uv run pytest tests/test_rim_parsing.py -v
 
 # Тільки тести слотів
-python -m pytest tests/test_rim_element.py -v
+uv run pytest tests/test_rim_element.py -v
+
+# Збірка source distribution та wheel
+uv run python -m build
 ```
 
 ## Логування
@@ -356,4 +366,4 @@ MIT License — див. файл [LICENSE](LICENSE)
 
 ---
 
-**Версія:** 13 · **Оновлено:** 2026-04-14
+**Версія:** 15 · **Оновлено:** 2026-09-07
