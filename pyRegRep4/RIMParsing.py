@@ -24,6 +24,7 @@ def serialize_any_value_type(value: Any) -> Any:
 
 class ValueTypes(str, Enum):
     """Типи значень у RIM документах."""
+
     STRING = "StringValueType"
     BOOLEAN = "BooleanValueType"
     INTEGER = "IntegerValueType"
@@ -35,6 +36,7 @@ class ValueTypes(str, Enum):
 
 class ParsingError(Exception):
     """Базовий клас для помилок парсування."""
+
     pass
 
 
@@ -62,8 +64,7 @@ class Parsing:
             doc = doc.encode("utf-8")  # Конвертуємо назад в bytes для lxml
         else:
             raise ParsingError(
-                f"Невалідний тип даних для парсування: {type(doc)}. "
-                "Очікується bytes або str."
+                f"Невалідний тип даних для парсування: {type(doc)}. Очікується bytes або str."
             )
 
         try:
@@ -105,14 +106,18 @@ class Parsing:
         Returns:
             Словник у форматі {префікс: URI}
         """
-        ns = NS.DEFAULT_NAMESPACES.copy()
-        for k, v in self.doc.nsmap.items():
-            if k is not None and v is not None:
-                ns[k] = v
-                _logger.debug(f"Знайдено namespace: {k} -> {v}")
-            else:
-                _logger.warning(f"Пропущено некоректний namespace: {k} -> {v}")
-        return ns
+        unique_uris = set()
+        ns_dict = {}
+        for elem in self.doc.iter():
+            if elem.nsmap:
+                for prefix, uri in elem.nsmap.items():
+                    unique_uris.add(uri)
+                    # Якщо префікс None, це дефолтний простір імен без префікса
+                    key = prefix if prefix is not None else "default"
+                    ns_dict[key] = uri
+                    _logger.debug(f"Знайдено namespace: {key} -> {uri}")
+
+        return ns_dict
 
     def __safe_add_slot(
         self,
@@ -161,7 +166,7 @@ class Parsing:
         if not type_attr:
             raise ParsingError("Атрибут xsi:type не знайдено")
 
-        if ':' not in type_attr:
+        if ":" not in type_attr:
             raise ParsingError(f"Невалідний формат типу: {type_attr}. Очікується 'префікс:Тип'")
 
         type_value = type_attr.split(":")[1].strip()

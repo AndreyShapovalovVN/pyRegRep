@@ -22,13 +22,13 @@ jobs:
           python-version: "3.12"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78
 
       - name: Build package
         run: uv build
 
       - name: Validate distribution metadata
-        run: uvx twine check --strict dist/*
+        run: uvx --no-build --from twine==7.0.0 twine check --strict dist/*
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33
