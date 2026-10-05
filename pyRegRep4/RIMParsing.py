@@ -5,6 +5,8 @@ from typing import Any
 import xmltodict
 from lxml import etree
 
+from .NS import NS
+
 _logger = logging.getLogger(__name__)
 
 
@@ -103,7 +105,7 @@ class Parsing:
         Returns:
             Словник у форматі {префікс: URI}
         """
-        ns = {}
+        ns = NS.DEFAULT_NAMESPACES.copy()
         for k, v in self.doc.nsmap.items():
             if k is not None and v is not None:
                 ns[k] = v

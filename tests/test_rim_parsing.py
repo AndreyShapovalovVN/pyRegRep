@@ -14,6 +14,7 @@ from pathlib import Path
 import pytest
 from lxml import etree
 
+from pyRegRep4.NS import NS
 from pyRegRep4.RIMParsing import Parsing, ParsingError
 
 # Test data directory
@@ -345,6 +346,10 @@ class TestEdgeCases:
 </query:QueryRequest>"""
         parsing = Parsing(minimal_xml)
         assert isinstance(parsing.slots, dict)
+        assert all(
+            parsing._ns[prefix] == uri
+            for prefix, uri in NS.DEFAULT_NAMESPACES.items()
+        )
 
     @pytest.fixture
     def request_doc(self):
