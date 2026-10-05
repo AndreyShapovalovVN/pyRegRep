@@ -31,17 +31,24 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
+        with:
+          enable-cache: true
+
       - name: Install dependencies
-        run: uv --no-build sync --frozen --extra dev
+        # uv.lock is committed; --frozen prevents resolving or changing it.
+        # --no-build rejects dependencies that would execute a build backend.
+        run: uv sync --frozen --no-build --no-install-project --extra dev # NOSONAR (S8544: versions are locked by uv.lock)
 
       - name: Lint with Ruff
-        run: uv --no-build run ruff check . --extend-exclude 'tests/~*.py'
+        run: uv run --no-sync ruff check . --extend-exclude 'tests/~*.py' # NOSONAR
 
       - name: Type check with mypy
-        run: uv --no-build run mypy . --ignore-missing-imports --pretty --show-error-codes
+        run: uv run --no-sync  mypy . --ignore-missing-imports --pretty --show-error-codes # NOSONAR
 
       - name: Run tests with pytest
-        run: uv --no-build run pytest --maxfail=2 --disable-warnings --ignore-glob='tests/~*.py'
+        run: uv run --no-sync  pytest --maxfail=2 --disable-warnings --ignore-glob='tests/~*.py' # NOSONAR
 
   gitleaks:
     name: Gitleaks Secret Scan

@@ -5,8 +5,6 @@ from typing import Any
 import xmltodict
 from lxml import etree
 
-from .NS import NS
-
 _logger = logging.getLogger(__name__)
 
 
