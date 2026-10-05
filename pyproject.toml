@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=84.0.0", "wheel>=0.48.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -13,8 +13,8 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
 dependencies = [
-    "lxml>=5.2.1",
-    "xmltodict>=0.13.0",
+    "lxml>=6.1.3",
+    "xmltodict>=1.0.4",
 ]
 
 keywords = ["registry", "repositories", "ukraine"]
@@ -73,11 +73,11 @@ select = ["E", "F", "W", "I", "UP"]
 
 [project.optional-dependencies]
 dev = [
-    "black>=23.0.0",
-    "build>=1.2.2",
-    "mypy>=1.13.0",
+    "black>=26.10.0",
+    "build>=1.6.1",
+    "mypy>=2.4.0",
     "pytest>=9.1.1",
-    "pytest-cov>=4.0.0",
-    "ruff>=0.15.21",
-    "twine>=6.2.0",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.16.10",
+    "twine>=7.0.0",
 ]
