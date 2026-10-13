@@ -1184,7 +1184,7 @@ wheels = [
 
 [[package]]
 name = "pyregrep"
-version = "16"
+version = "17"
 source = { editable = "." }
 dependencies = [
     { name = "lxml" },

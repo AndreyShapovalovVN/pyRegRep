@@ -104,6 +104,10 @@ slot = get_slot(
 elem = etree.Element("CustomData")
 elem.text = "Payload"
 slot = get_slot("CustomPayload", "AnyValueType", elem)
+
+# Колекція AnyValueType: кожен XML елемент отримує окремий rim:Element
+items = [etree.Element("First"), etree.Element("Second")]
+slot = get_slot("Items", "CollectionValueType", items)
 ```
 
 ## API Довідник
@@ -171,7 +175,7 @@ get_slot(name: str, slot_type: str, value: Any) -> Xml
 | `"StringValueType"` | `str` | Текстовий рядок |
 | `"BooleanValueType"` | `bool` | Логічне значення |
 | `"DateTimeValueType"` | `datetime.datetime` або `str` | Дата/час |
-| `"CollectionValueType"` | `etree._Element` | Колекція елементів |
+| `"CollectionValueType"` | `etree._Element` або `list/tuple[etree._Element]` | Колекція AnyValueType |
 | `"AnyValueType"` | `etree._Element` | Довільний XML елемент |
 | `"InternationalStringValueType"` | `etree._Element`, `list[etree._Element]` або `list[dict]` | Багатомовний текст |
 

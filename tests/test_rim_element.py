@@ -248,6 +248,31 @@ class TestDateTimeValueType:
 class TestCollectionValueType:
     """Test CollectionValueType slot creation."""
 
+    @pytest.mark.parametrize("container", [list, tuple])
+    def test_collection_of_any_values(self, container):
+        parent = etree.fromstring(b"<Root><First>one</First><Second>two</Second></Root>")
+        original = etree.tostring(parent)
+        slot = get_slot("Items", "CollectionValueType", container(parent))
+        value = slot.element[0]
+        xsi_type = "{http://www.w3.org/2001/XMLSchema-instance}type"
+        assert len(value) == 2
+        assert all(item.get(xsi_type) == "rim:AnyValueType" for item in value)
+        assert [item[0].tag for item in value] == ["First", "Second"]
+        assert [item[0].text for item in value] == ["one", "two"]
+        assert etree.tostring(parent) == original
+        before = slot.text
+        slot.name = "Items"
+        assert slot.text == before
+
+    def test_empty_collection(self):
+        slot = get_slot("Items", "CollectionValueType", [])
+        assert len(slot.element[0]) == 0
+
+    @pytest.mark.parametrize("value", ["text", None, [etree.Element("Item"), "text"]])
+    def test_invalid_collection(self, value):
+        with pytest.raises(TypeError, match="CollectionValueType expects"):
+            get_slot("Items", "CollectionValueType", value)
+
     def test_collection_value_type_with_element(self):
         """Test CollectionValueType with XML element."""
         elem = etree.Element("Item")

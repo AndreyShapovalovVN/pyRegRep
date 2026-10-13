@@ -2,6 +2,7 @@ import datetime
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import Callable
+from copy import deepcopy
 from typing import Any, cast
 
 from lxml import etree
@@ -108,6 +109,13 @@ class _TimeStamp(Xml):
 
 class _CollectionValueType(Xml):
     def create_element(self):
+        items = [self.value] if isinstance(self.value, etree._Element) else self.value
+        if not isinstance(items, (list, tuple)) or any(
+            not isinstance(item, etree._Element) for item in items
+        ):
+            raise TypeError(
+                "CollectionValueType expects an XML element or a list/tuple of XML elements"
+            )
         self._element = etree.Element(
             self._tname("rim", "Slot"), nsmap=self._ns,
             attrib={"name": self.name}
@@ -120,13 +128,10 @@ class _CollectionValueType(Xml):
                 "collectionType": "urn:oasis:names:tc:ebxml-regrep:CollectionType:Set",
             },
         )
-        if isinstance(self.value, etree._Element):
+        for item in items:
             e = etree.SubElement(sv, self._tname("rim", "Element"),
                                  attrib={self._tname("xsi", "type"): 'rim:AnyValueType'})
-        else:
-            e = etree.SubElement(sv, self._tname("rim", "Element"),
-                                 attrib={self._tname("xsi", "type"): 'rim:StringValueType'})
-        e.append(self.value)
+            e.append(deepcopy(item))
 
 
 class _AnyValueType(Xml):
@@ -207,7 +212,7 @@ def get_slot(name: str, slot_type: str, value: Any) -> Xml:
             - StringValueType: str
             - BooleanValueType: bool
             - DateTimeValueType: datetime.datetime або str (ISO format)
-            - CollectionValueType: etree._Element
+            - CollectionValueType: etree._Element або list/tuple[etree._Element]
             - AnyValueType: etree._Element
             - InternationalStringValueType: etree._Element або list[etree._Element]
 
