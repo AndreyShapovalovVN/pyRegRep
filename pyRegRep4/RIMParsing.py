@@ -113,7 +113,6 @@ class Parsing:
                     # Якщо префікс None, це дефолтний простір імен без префікса
                     key = prefix if prefix is not None else "default"
                     ns_dict[key] = uri
-                    _logger.debug(f"Знайдено namespace: {key} -> {uri}")
 
         return ns_dict
 
